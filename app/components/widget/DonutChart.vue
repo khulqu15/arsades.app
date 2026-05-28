@@ -1,0 +1,17 @@
+<template>
+    <div class="p-4 rounded-xl border border-gray-200 bg-white shadow-xs dark:bg-neutral-800 dark:border-neutral-700">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-800 dark:text-neutral-100">{{ title }}</h3>
+            <slot name="actions" />
+        </div>
+        <Doughnut :data="data" :options="options" />
+    </div>
+</template>
+
+<script setup lang="ts">
+import { Doughnut } from 'vue-chartjs'
+import { Chart, ArcElement, Tooltip, Legend } from 'chart.js'
+Chart.register(ArcElement, Tooltip, Legend)
+
+defineProps<{ title: string; data: any; options?: any }>()
+</script>
