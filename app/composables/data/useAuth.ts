@@ -4,6 +4,7 @@ import { useAppApi } from '../useAppApi'
 type AuthResponse = {
   data: UserItem
   message: string
+  token?: string
 }
 
 type FetchOptions = NonNullable<Parameters<typeof $fetch>[1]>
@@ -22,8 +23,39 @@ export function useAuth() {
 
   function authEndpoint(path: string) {
     const cleanPath = path.startsWith('/') ? path : `/${path}`
-
     return apiUrl(`${authPath.value}${cleanPath}`)
+  }
+
+  const user = useState<UserItem | null>('auth:user', () => null)
+  const pending = ref(false)
+  const errorMessage = ref('')
+
+  const isLoggedIn = computed(() => Boolean(user.value))
+  const roles = computed(() => user.value?.roles || [])
+  const permissions = computed(() => user.value?.permissions || [])
+
+  const token = useState<string | null>('auth:token', () => {
+    if (import.meta.client) {
+      return localStorage.getItem('auth_token')
+    }
+
+    return null
+  })
+
+  function getAuthHeaders(optionsHeaders?: FetchOptions['headers']) {
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    }
+
+    if (token.value) {
+      headers.Authorization = `Bearer ${token.value}`
+    }
+
+    return {
+      ...headers,
+      ...(optionsHeaders as Record<string, string> || {})
+    }
   }
 
   async function authFetch<T>(
@@ -33,26 +65,13 @@ export function useAuth() {
     return await $fetch<T>(authEndpoint(path), {
       ...options,
 
-      /**
-       * Pakai ini kalau backend auth memakai cookie/session.
-       * Kalau backend return token biasa, boleh hapus credentials ini.
-       */
-      credentials: 'include',
+      // IMPORTANT:
+      // Jangan pakai credentials: 'include'
+      // karena backend sedang memakai Access-Control-Allow-Origin: *
 
-      headers: {
-        ...(options.headers || {})
-      }
+      headers: getAuthHeaders(options.headers)
     })
   }
-
-  const user = useState<UserItem | null>('auth:user', () => null)
-
-  const pending = ref(false)
-  const errorMessage = ref('')
-
-  const isLoggedIn = computed(() => Boolean(user.value))
-  const roles = computed(() => user.value?.roles || [])
-  const permissions = computed(() => user.value?.permissions || [])
 
   function hasRole(roleCode: string) {
     return roles.value.some((role) => role.roleCode === roleCode)
@@ -65,9 +84,7 @@ export function useAuth() {
   async function fetchMe() {
     try {
       const response = await authFetch<{ data: UserItem }>('/me')
-
       user.value = response.data
-
       return response.data
     } catch {
       user.value = null
@@ -93,12 +110,25 @@ export function useAuth() {
 
       user.value = response.data
 
+      if (response.token) {
+        token.value = response.token
+
+        if (import.meta.client) {
+          localStorage.setItem('auth_token', response.token)
+        }
+      }
+
+      if (import.meta.client) {
+        localStorage.setItem('auth_user', JSON.stringify(response.data))
+      }
+
       return response.data
     } catch (error: any) {
       errorMessage.value =
         error?.data?.statusMessage ||
         error?.data?.message ||
         error?.statusMessage ||
+        error?.message ||
         'Login gagal. Periksa email dan password.'
 
       throw error
@@ -122,6 +152,18 @@ export function useAuth() {
 
       user.value = response.data
 
+      if (response.token) {
+        token.value = response.token
+
+        if (import.meta.client) {
+          localStorage.setItem('auth_token', response.token)
+        }
+      }
+
+      if (import.meta.client) {
+        localStorage.setItem('auth_user', JSON.stringify(response.data))
+      }
+
       return response.data
     } catch (error: any) {
       errorMessage.value =
@@ -141,8 +183,17 @@ export function useAuth() {
       await authFetch('/logout', {
         method: 'POST'
       })
+    } catch {
+      // ignore logout API error
     } finally {
       user.value = null
+      token.value = null
+
+      if (import.meta.client) {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_user')
+      }
+
       await navigateTo('/login')
     }
   }
@@ -152,6 +203,7 @@ export function useAuth() {
     authPath,
 
     user,
+    token,
     pending,
     errorMessage,
 
