@@ -38,17 +38,14 @@ export default defineNuxtConfig({
         '/login',
         '/register',
         '/app',
+        '/app/news',
+        '/app/facilities',
+        '/app/institutions',
+        '/app/organizations',
+        '/app/potentials',
+        '/app/profile',
       ],
-      ignore: [
-        '/dev',
-        '/dev/**',
-        '/app',
-        '/app/**',
-      ]
     }
-  },
-  routeRules: {
-    '/app/**': { prerender: false },
   },
 
   imports: {
@@ -121,7 +118,21 @@ export default defineNuxtConfig({
 
       apiRemoteEnabled: String(process.env.NUXT_PUBLIC_API_REMOTE_ENABLED || 'false') === 'true',
       apiBaseUrl: process.env.API_BASE_URL || '',
+      
+       // Firebase
+      firebaseApiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY || '',
+      firebaseAuthDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+      firebaseDatabaseURL: process.env.NUXT_PUBLIC_FIREBASE_DATABASE_URL || '',
+      firebaseProjectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID || '',
+      firebaseStorageBucket: process.env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+      firebaseMessagingSenderId:
+        process.env.NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+      firebaseAppId: process.env.NUXT_PUBLIC_FIREBASE_APP_ID || '',
 
+      // MySQL existing user lookup only
+      // Tidak create user baru di MySQL.
+      enableMysqlUserLookup: process.env.NUXT_PUBLIC_ENABLE_MYSQL_USER_LOOKUP || 'true',
+      mysqlUserLookupPath: process.env.NUXT_PUBLIC_MYSQL_USER_LOOKUP_PATH || '/users'
     },
     apiBaseUrl: process.env.API_BASE_URL || '',
     databaseHost: process.env.DATABASE_HOST || 'localhost',
