@@ -1,27 +1,25 @@
-import { getHeader, getMethod, getRequestURL, sendNoContent, setResponseHeaders } from 'h3'
+// server/middleware/cors.ts
+import {
+  getMethod,
+  getRequestURL,
+  sendNoContent,
+  setResponseHeaders
+} from 'h3'
 
 export default defineEventHandler((event) => {
-    const pathname = getRequestURL(event).pathname
-    if (!pathname.startsWith('/api/')) return
+  const pathname = getRequestURL(event).pathname
 
-    const allowedOrigins = String(process.env.CORS_ORIGINS || '')
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
+  if (!pathname.startsWith('/api/')) return
 
-    const origin = getHeader(event, 'origin') || ''
-    const allowAny = allowedOrigins.includes('*')
-    const isAllowed = allowAny || allowedOrigins.includes(origin)
+  setResponseHeaders(event, {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+    'Access-Control-Max-Age': '86400'
+  })
 
-    if (isAllowed) {
-        setResponseHeaders(event, {
-            'Access-Control-Allow-Origin': allowAny ? '*' : origin,
-            'Vary': 'Origin',
-            'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-            'Access-Control-Allow-Credentials': 'true',
-        })
-    }
-
-    if (getMethod(event) === 'OPTIONS') return sendNoContent(event, 204)
+  if (getMethod(event) === 'OPTIONS') {
+    return sendNoContent(event, 204)
+  }
 })
