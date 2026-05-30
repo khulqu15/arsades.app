@@ -6,11 +6,10 @@ import {
 } from 'h3'
 
 export default defineEventHandler((event) => {
-  const origin = getHeader(event, 'origin') || '*'
   const requestHeaders = getHeader(event, 'access-control-request-headers')
 
   setResponseHeaders(event, {
-    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Origin': '*',
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers':
