@@ -1,18 +1,11 @@
-// server/middleware/cors.ts
 import {
   defineEventHandler,
   getHeader,
-  getMethod,
-  getRequestURL,
   sendNoContent,
   setResponseHeaders
 } from 'h3'
 
 export default defineEventHandler((event) => {
-  const pathname = getRequestURL(event).pathname
-
-  if (!pathname.startsWith('/api/')) return
-
   const origin = getHeader(event, 'origin') || '*'
   const requestHeaders = getHeader(event, 'access-control-request-headers')
 
@@ -25,7 +18,5 @@ export default defineEventHandler((event) => {
     'Access-Control-Max-Age': '86400'
   })
 
-  if (getMethod(event) === 'OPTIONS') {
-    return sendNoContent(event, 204)
-  }
+  return sendNoContent(event, 204)
 })
