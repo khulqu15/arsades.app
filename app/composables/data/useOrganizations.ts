@@ -26,8 +26,9 @@ export function useOrganizationsSQL() {
   const sort = ref<'newest' | 'oldest' | 'name' | 'sort_order'>('sort_order')
 
   const { tenantApiUrl } = useAppApi()
+
   const apiUrl = computed(() => {
-    return  tenantApiUrl(tenantSlug.value, '/organizations')
+    return tenantApiUrl(tenantSlug.value, '/organizations')
   })
 
   const {
@@ -40,7 +41,7 @@ export function useOrganizationsSQL() {
     query: computed(() => ({
       q: q.value || undefined,
       type: selectedType.value === 'all' ? undefined : selectedType.value,
-      status: selectedStatus.value,
+      status: selectedStatus.value === 'all' ? undefined : selectedStatus.value,
       featured: featuredOnly.value ? 'true' : undefined,
       page: page.value,
       limit: limit.value,
@@ -67,9 +68,9 @@ export function useOrganizationsSQL() {
     })
   })
 
-  const organizations = computed<OrganizationItem[]>(() => {
+  const organizations = computed<OrganizationItem[]>((() => {
     return data.value?.data || []
-  })
+  }) as any)
 
   const featuredOrganizations = computed(() => {
     return organizations.value.filter((item) => item.isFeatured)
@@ -84,13 +85,21 @@ export function useOrganizationsSQL() {
     }
   })
 
+  async function safeRefresh() {
+    try {
+      await refresh()
+    } catch (err) {
+      console.warn('[organizations] refresh failed after mutation:', err)
+    }
+  }
+
   async function createOrganization(payload: CreateOrganizationPayload) {
     const response = await $fetch<{ data: OrganizationItem }>(apiUrl.value, {
       method: 'POST',
       body: payload
     })
 
-    await refresh()
+    await safeRefresh()
 
     return response.data
   }
@@ -101,19 +110,21 @@ export function useOrganizationsSQL() {
       body: payload
     })
 
-    await refresh()
+    await safeRefresh()
 
     return response.data
   }
 
   async function deleteOrganization(id: string) {
-    const response = await $fetch<{ message: string }>(`${apiUrl.value}/${id}`, {
+    const response = await $fetch<{ message?: string } | null>(`${apiUrl.value}/${id}`, {
       method: 'DELETE'
     })
 
-    await refresh()
+    await safeRefresh()
 
-    return response
+    return response || {
+      message: 'Data berhasil dihapus.'
+    }
   }
 
   function resetFilters() {
@@ -143,6 +154,7 @@ export function useOrganizationsSQL() {
     pending,
     error,
     refresh,
+    safeRefresh,
 
     createOrganization,
     updateOrganization,
