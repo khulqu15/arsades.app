@@ -39,7 +39,7 @@
       </Transition>
     </Teleport>
 
-    <div class="mx-auto max-w-7xl space-y-4 p-4 sm:p-6">
+    <div class="mx-auto space-y-4 p-4 sm:p-6">
       <!-- Compact Header -->
       <section class="relative overflow-hidden rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
         <div class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-blue-100 blur-3xl"></div>
@@ -79,15 +79,6 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <NuxtLink
-              to="/organizations"
-              target="_blank"
-              class="inline-flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-black text-neutral-700 transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-            >
-              <Icon icon="solar:eye-bold-duotone" class="h-5 w-5" />
-              Lihat Public
-            </NuxtLink>
-
             <button
               type="button"
               class="inline-flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-black text-neutral-700 transition hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50"
@@ -113,7 +104,7 @@
       <section class="rounded-[2rem] border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
         <div class="grid gap-3 lg:grid-cols-[1fr_180px_160px_150px]">
           <div class="relative">
-            <Icon icon="solar:magnifer-linear" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+            <Icon icon="solar:magnifer-linear" class="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
             <input
               v-model.trim="q"
               type="text"
@@ -279,28 +270,7 @@
               </div>
             </div>
 
-            <div class="mt-4 flex flex-wrap items-center gap-2">
-              <span
-                class="rounded-full px-2.5 py-1 text-[11px] font-black"
-                :class="item.status === 'active' ? 'bg-blue-50 text-blue-700' : 'bg-neutral-100 text-neutral-500'"
-              >
-                {{ item.status === 'active' ? 'Aktif' : 'Nonaktif' }}
-              </span>
-              <span class="min-w-0 truncate rounded-full bg-neutral-50 px-2.5 py-1 text-[11px] font-bold text-neutral-500">
-                {{ item.slug }}
-              </span>
-            </div>
-
             <div class="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-4">
-              <NuxtLink
-                :to="organizationPublicTo(item)"
-                target="_blank"
-                class="inline-flex items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs font-black text-blue-700 transition hover:bg-blue-600 hover:text-white"
-              >
-                <Icon icon="solar:eye-bold-duotone" class="h-4 w-4" />
-                Public
-              </NuxtLink>
-
               <button
                 type="button"
                 class="inline-flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2.5 text-xs font-black text-neutral-700 transition hover:bg-neutral-50"
@@ -308,15 +278,6 @@
               >
                 <Icon icon="solar:pen-bold-duotone" class="h-4 w-4" />
                 Edit
-              </button>
-
-              <button
-                type="button"
-                class="inline-flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2.5 text-xs font-black text-neutral-700 transition hover:bg-neutral-50"
-                @click="copyPublicLink(item)"
-              >
-                <Icon icon="solar:copy-bold-duotone" class="h-4 w-4" />
-                Salin
               </button>
 
               <button

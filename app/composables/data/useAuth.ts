@@ -38,24 +38,16 @@ export function useAuth() {
 
   const authPath = computed(() => '/api')
 
-  /**
-   * MySQL sync di sini sifatnya READ ONLY.
-   * Tidak ada POST /register, tidak ada create user MySQL,
-   * tidak ada insert/update ke tabel users MySQL.
-   */
   const mysqlLookupEnabled = computed(() => {
     return String(runtime.public.enableMysqlUserLookup || 'true') === 'true'
   })
 
-  /**
-   * Default akan mencoba:
-   * /api/users?search=email
-   *
-   * Kalau backend kamu punya endpoint lain, bisa set:
-   * NUXT_PUBLIC_MYSQL_USER_LOOKUP_PATH=/users
-   */
   const mysqlUserLookupPath = computed(() => {
     return String(runtime.public.mysqlUserLookupPath || '/users')
+  })
+
+  const autoRegisterInvalidCredential = computed(() => {
+    return String(runtime.public.autoRegisterInvalidCredential || 'true') === 'true'
   })
 
   const user = useState<UserItem | null>('auth:user', () => null)
@@ -153,7 +145,7 @@ export function useAuth() {
           firebaseAuth.browserLocalPersistence
         )
       } catch {
-        // Ignore persistence error supaya auth tetap bisa jalan.
+        // Abaikan error persistence supaya auth tetap jalan.
       }
 
       const db = firebaseDatabase.getDatabase(app)
@@ -271,12 +263,11 @@ export function useAuth() {
 
     return {
       id: String(value?.id || value?.firebaseUid || firebaseUser?.uid || ''),
-      name:
-        String(
-          value?.name ||
-          firebaseUser?.displayName ||
-          getDefaultName(email)
-        ),
+      name: String(
+        value?.name ||
+        firebaseUser?.displayName ||
+        getDefaultName(email)
+      ),
       email,
       avatarUrl:
         value?.avatarUrl ??
@@ -327,6 +318,15 @@ export function useAuth() {
     return null
   }
 
+  function isInvalidCredentialError(error: any) {
+    const code = String(error?.code || '')
+
+    return [
+      'auth/invalid-credential',
+      'auth/user-not-found'
+    ].includes(code)
+  }
+
   async function getFreshFirebaseToken(forceRefresh = false) {
     if (!import.meta.client) return null
 
@@ -358,10 +358,6 @@ export function useAuth() {
     }
   }
 
-  /**
-   * Helper ini hanya dipakai untuk lookup MySQL READ ONLY.
-   * Jangan dipakai untuk login/register utama.
-   */
   async function authFetch<T>(
     path: string,
     options: FetchOptions = {}
@@ -370,24 +366,10 @@ export function useAuth() {
 
     return await $fetch<T>(authEndpoint(path), {
       ...options,
-
-      /**
-       * Jangan pakai credentials: 'include'
-       * karena auth utama sudah Firebase token.
-       */
       headers: getAuthHeaders(options.headers)
     })
   }
 
-  /**
-   * Sinkronisasi MySQL READ ONLY.
-   *
-   * Tujuan:
-   * - Jika email sudah ada di tabel users MySQL, ambil roles/permissions/profile.
-   * - Tidak membuat user baru di MySQL.
-   * - Tidak update user MySQL.
-   * - Tidak insert apa pun ke MySQL.
-   */
   async function lookupExistingMysqlUserByEmail(email: string) {
     if (!mysqlLookupEnabled.value) return null
 
@@ -416,8 +398,7 @@ export function useAuth() {
           return mysqlUser
         }
       } catch {
-        // Endpoint lookup bisa saja tidak tersedia / butuh auth lain.
-        // Abaikan supaya Firebase Auth tetap berjalan.
+        // Lookup MySQL hanya opsional dan read-only.
       }
     }
 
@@ -435,11 +416,30 @@ export function useAuth() {
     return normalizeUserItem(snapshot.val())
   }
 
+  async function readRealtimeUserByEmail(email: string) {
+    const cleanEmail = normalizeEmail(email)
+    if (!cleanEmail) return null
+
+    const { db } = await getFirebaseClients()
+    const { ref: dbRef, get } = await import('firebase/database')
+
+    const indexSnapshot = await get(
+      dbRef(db, getTenantUserEmailIndexPath(cleanEmail))
+    )
+
+    if (!indexSnapshot.exists()) return null
+
+    const uid = String(indexSnapshot.val()?.uid || '')
+    if (!uid) return null
+
+    return await readRealtimeUser(uid)
+  }
+
   async function saveRealtimeUser(
     firebaseUser: import('firebase/auth').User,
     profile: UserItem,
     options?: {
-      source?: 'firebase' | 'mysql' | 'realtime_database'
+      source?: 'firebase' | 'mysql' | 'realtime_database' | 'auto_register'
     }
   ) {
     const { db } = await getFirebaseClients()
@@ -486,17 +486,12 @@ export function useAuth() {
     return normalizeUserItem(payload, firebaseUser)
   }
 
-  async function resolveUserProfile(firebaseUser: import('firebase/auth').User) {
+  async function resolveUserProfile(
+    firebaseUser: import('firebase/auth').User,
+    source: 'firebase' | 'auto_register' = 'firebase'
+  ) {
     const email = normalizeEmail(firebaseUser.email)
 
-    /**
-     * Prioritas:
-     * 1. MySQL existing user kalau ada.
-     * 2. Realtime Database user kalau ada.
-     * 3. Default profile dari Firebase Auth.
-     *
-     * MySQL hanya READ, tidak create/update.
-     */
     const mysqlUser = await lookupExistingMysqlUserByEmail(email)
 
     if (mysqlUser) {
@@ -516,7 +511,7 @@ export function useAuth() {
     const defaultUser = createDefaultUserFromFirebase(firebaseUser)
 
     return await saveRealtimeUser(firebaseUser, defaultUser, {
-      source: 'firebase'
+      source
     })
   }
 
@@ -543,35 +538,117 @@ export function useAuth() {
     }
   }
 
-  async function fetchMe() {
+  async function restoreCurrentFirebaseSession() {
     if (!import.meta.client) return null
 
-    try {
-      const { auth } = await getFirebaseClients()
-      const firebaseAuth = await import('firebase/auth')
+    const { auth } = await getFirebaseClients()
+    const firebaseAuth = await import('firebase/auth')
 
-      const firebaseUser = await new Promise<import('firebase/auth').User | null>((resolve) => {
-        const unsubscribe = firebaseAuth.onAuthStateChanged(auth, (currentUser) => {
-          unsubscribe()
-          resolve(currentUser)
-        })
+    const firebaseUser = await new Promise<import('firebase/auth').User | null>((resolve) => {
+      const unsubscribe = firebaseAuth.onAuthStateChanged(auth, (currentUser) => {
+        unsubscribe()
+        resolve(currentUser)
       })
+    })
 
-      if (!firebaseUser) {
+    if (!firebaseUser) return null
+
+    const freshToken = await firebaseUser.getIdToken(true)
+    const profile = await resolveUserProfile(firebaseUser)
+
+    setLocalSession(profile, freshToken)
+
+    return profile
+  }
+
+  async function fetchMe() {
+    try {
+      const profile = await restoreCurrentFirebaseSession()
+
+      if (!profile) {
         clearLocalSession()
         return null
       }
-
-      const freshToken = await firebaseUser.getIdToken()
-      const profile = await resolveUserProfile(firebaseUser)
-
-      setLocalSession(profile, freshToken)
 
       return profile
     } catch {
       clearLocalSession()
       return null
     }
+  }
+
+  async function autoRegisterFirebaseAuth(payload: {
+    email: string
+    password: string
+  }) {
+    const { auth } = await getFirebaseClients()
+    const firebaseAuth = await import('firebase/auth')
+
+    const email = normalizeEmail(payload.email)
+
+    const existingMysqlUser = await lookupExistingMysqlUserByEmail(email)
+    const existingRealtimeUser = await readRealtimeUserByEmail(email)
+
+    const displayName =
+      existingMysqlUser?.name ||
+      existingRealtimeUser?.name ||
+      getDefaultName(email)
+
+    const credential = await firebaseAuth.createUserWithEmailAndPassword(
+      auth,
+      email,
+      payload.password
+    )
+
+    await firebaseAuth.updateProfile(credential.user, {
+      displayName,
+      photoURL:
+        existingMysqlUser?.avatarUrl ||
+        existingRealtimeUser?.avatarUrl ||
+        null
+    })
+
+    const profile =
+      existingMysqlUser ||
+      existingRealtimeUser ||
+      createDefaultUserFromFirebase(credential.user, {
+        name: displayName,
+        email,
+        avatarUrl:
+          existingMysqlUser?.avatarUrl ||
+          existingRealtimeUser?.avatarUrl ||
+          null,
+        phone:
+          existingMysqlUser?.phone ||
+          existingRealtimeUser?.phone ||
+          null,
+        roles:
+          existingMysqlUser?.roles?.length
+            ? existingMysqlUser.roles
+            : existingRealtimeUser?.roles?.length
+              ? existingRealtimeUser.roles
+              : undefined,
+        permissions:
+          existingMysqlUser?.permissions?.length
+            ? existingMysqlUser.permissions
+            : existingRealtimeUser?.permissions?.length
+              ? existingRealtimeUser.permissions
+              : undefined
+      })
+
+    const savedProfile = await saveRealtimeUser(credential.user, profile, {
+      source: existingMysqlUser
+        ? 'mysql'
+        : existingRealtimeUser
+          ? 'realtime_database'
+          : 'auto_register'
+    })
+
+    const freshToken = await credential.user.getIdToken(true)
+
+    setLocalSession(savedProfile, freshToken)
+
+    return savedProfile
   }
 
   async function login(payload: {
@@ -585,18 +662,35 @@ export function useAuth() {
       const { auth } = await getFirebaseClients()
       const firebaseAuth = await import('firebase/auth')
 
-      const credential = await firebaseAuth.signInWithEmailAndPassword(
-        auth,
-        normalizeEmail(payload.email),
-        payload.password
-      )
+      try {
+        const credential = await firebaseAuth.signInWithEmailAndPassword(
+          auth,
+          normalizeEmail(payload.email),
+          payload.password
+        )
 
-      const freshToken = await credential.user.getIdToken()
-      const profile = await resolveUserProfile(credential.user)
+        const freshToken = await credential.user.getIdToken(true)
+        const profile = await resolveUserProfile(credential.user)
 
-      setLocalSession(profile, freshToken)
+        setLocalSession(profile, freshToken)
 
-      return profile
+        return profile
+      } catch (loginError: any) {
+        if (
+          autoRegisterInvalidCredential.value &&
+          isInvalidCredentialError(loginError)
+        ) {
+          return await autoRegisterFirebaseAuth(payload)
+        }
+
+        const restoredProfile = await restoreCurrentFirebaseSession()
+
+        if (restoredProfile) {
+          return restoredProfile
+        }
+
+        throw loginError
+      }
     } catch (error: any) {
       errorMessage.value = mapFirebaseAuthError(error)
       throw error
@@ -613,8 +707,18 @@ export function useAuth() {
       const { auth } = await getFirebaseClients()
       const firebaseAuth = await import('firebase/auth')
 
-      const email = normalizeEmail(payload.email)
-      const password = payload.password || 'Password123'
+      const anyPayload = payload as any
+      const email = normalizeEmail(anyPayload.email)
+      const password = String(anyPayload.password || 'Password123')
+
+      const existingMysqlUser = await lookupExistingMysqlUserByEmail(email)
+      const existingRealtimeUser = await readRealtimeUserByEmail(email)
+
+      const displayName =
+        String(anyPayload.name || '').trim() ||
+        existingMysqlUser?.name ||
+        existingRealtimeUser?.name ||
+        getDefaultName(email)
 
       const credential = await firebaseAuth.createUserWithEmailAndPassword(
         auth,
@@ -622,60 +726,65 @@ export function useAuth() {
         password
       )
 
-      const displayName = payload.name?.trim() || getDefaultName(email)
-
       await firebaseAuth.updateProfile(credential.user, {
         displayName,
-        photoURL: payload.avatarUrl || null
+        photoURL:
+          anyPayload.avatarUrl ||
+          existingMysqlUser?.avatarUrl ||
+          existingRealtimeUser?.avatarUrl ||
+          null
       })
 
-      /**
-       * Setelah register Firebase:
-       * - Tidak create user MySQL.
-       * - Tidak panggil /api/register.
-       * - Kalau email sudah ada di MySQL, ambil datanya saja.
-       * - Kalau tidak ada, simpan profile Firebase ke RTDB saja.
-       */
-      const mysqlUser = await lookupExistingMysqlUserByEmail(email)
-
-      const profile = mysqlUser
-        ? mysqlUser
-        : createDefaultUserFromFirebase(credential.user, {
-            name: displayName,
-            email,
-            avatarUrl: payload.avatarUrl || null,
-            phone: payload.phone || null,
-            status: payload.status || 'active',
-            roles: [
-              {
-                roleCode: payload.roleCode || 'user',
-                roleName: payload.roleCode || 'User',
-                scope: payload.roleCode === 'super_admin' ? 'global' : 'tenant',
-                tenantId: payload.tenantId || null,
-                tenantSlug:
-                  payload.roleCode === 'super_admin'
-                    ? null
-                    : tenantSlug.value,
-                tenantName:
-                  payload.roleCode === 'super_admin'
-                    ? null
-                    : tenantSlug.value
-              }
-            ],
-            permissions: []
-          })
+      const profile = existingMysqlUser
+        ? existingMysqlUser
+        : existingRealtimeUser
+          ? existingRealtimeUser
+          : createDefaultUserFromFirebase(credential.user, {
+              name: displayName,
+              email,
+              avatarUrl: anyPayload.avatarUrl || null,
+              phone: anyPayload.phone || null,
+              status: anyPayload.status || 'active',
+              roles: [
+                {
+                  roleCode: anyPayload.roleCode || 'user',
+                  roleName: anyPayload.roleCode || 'User',
+                  scope: anyPayload.roleCode === 'super_admin' ? 'global' : 'tenant',
+                  tenantId: anyPayload.tenantId || null,
+                  tenantSlug:
+                    anyPayload.roleCode === 'super_admin'
+                      ? null
+                      : tenantSlug.value,
+                  tenantName:
+                    anyPayload.roleCode === 'super_admin'
+                      ? null
+                      : tenantSlug.value
+                }
+              ],
+              permissions: []
+            })
 
       const savedProfile = await saveRealtimeUser(credential.user, profile, {
-        source: mysqlUser ? 'mysql' : 'firebase'
+        source: existingMysqlUser
+          ? 'mysql'
+          : existingRealtimeUser
+            ? 'realtime_database'
+            : 'firebase'
       })
 
-      const freshToken = await credential.user.getIdToken()
+      const freshToken = await credential.user.getIdToken(true)
 
       setLocalSession(savedProfile, freshToken)
 
       return savedProfile
     } catch (error: any) {
-      errorMessage.value = mapFirebaseAuthError(error, 'Registrasi gagal.')
+      if (String(error?.code || '') === 'auth/email-already-in-use') {
+        errorMessage.value =
+          'Email sudah terdaftar di Firebase Auth. Silakan login menggunakan password Firebase.'
+      } else {
+        errorMessage.value = mapFirebaseAuthError(error, 'Registrasi gagal.')
+      }
+
       throw error
     } finally {
       pending.value = false
@@ -707,11 +816,15 @@ export function useAuth() {
       'auth/user-disabled': 'Akun ini sedang dinonaktifkan.',
       'auth/user-not-found': 'Email belum terdaftar di Firebase Auth.',
       'auth/wrong-password': 'Password salah.',
-      'auth/invalid-credential': 'Email atau password salah.',
-      'auth/email-already-in-use': 'Email sudah digunakan di Firebase Auth.',
-      'auth/weak-password': 'Password minimal 6 karakter.',
-      'auth/network-request-failed': 'Koneksi bermasalah. Coba lagi beberapa saat.',
-      'auth/too-many-requests': 'Terlalu banyak percobaan login. Coba lagi nanti.',
+      'auth/invalid-credential':
+        'Email atau password belum cocok. Sistem sudah mencoba membuat akun Firebase otomatis.',
+      'auth/email-already-in-use':
+        'Email sudah terdaftar di Firebase Auth. Silakan login dengan password Firebase yang benar.',
+      'auth/weak-password': 'Password minimal 6 karakter untuk Firebase Auth.',
+      'auth/network-request-failed':
+        'Koneksi ke Firebase bermasalah. Sistem sudah mencoba memulihkan session yang masih aktif.',
+      'auth/too-many-requests':
+        'Terlalu banyak percobaan login. Coba lagi beberapa saat.',
       'auth/configuration-not-found':
         'Firebase Auth belum aktif. Aktifkan Email/Password provider di Firebase Console.'
     }

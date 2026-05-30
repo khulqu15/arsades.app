@@ -1,13 +1,14 @@
+<!-- /pages/app/index.vue -->
 <template>
   <main class="min-h-full bg-slate-50 text-slate-950" :style="themeVars">
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div class="absolute -left-32 top-0 h-80 w-80 rounded-full bg-blue-100/80 blur-3xl"></div>
-      <div class="absolute right-0 top-20 h-[26rem] w-[26rem] rounded-full bg-sky-100/70 blur-3xl"></div>
+      <div class="absolute right-0 top-20 h-104 w-104 rounded-full bg-sky-100/70 blur-3xl"></div>
       <div class="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-cyan-100/60 blur-3xl"></div>
       <div class="absolute inset-0 bg-grid opacity-[0.38]"></div>
     </div>
 
-    <div class="mx-auto max-w-7xl space-y-4 p-3 sm:p-5 lg:p-6">
+    <div class="mx-auto space-y-4 p-3 sm:p-5 lg:p-6">
       <section class="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
         <div class="relative p-4 sm:p-5 lg:p-6">
           <div class="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-blue-100 blur-3xl"></div>
@@ -286,7 +287,7 @@
         </div>
       </section>
 
-      <section class="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+      <section class="grid gap-4 lg:grid-cols-[1.15fr_1.0fr]">
         <article class="rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-4 shadow-sm sm:p-5">
           <div class="flex items-center justify-between gap-3">
             <div>

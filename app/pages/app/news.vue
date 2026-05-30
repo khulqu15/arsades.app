@@ -1,3 +1,5 @@
+<!-- /pages/app/news.vue -->
+
 <template>
   <section class="min-h-full bg-neutral-50 text-neutral-950" :style="themeVars">
     <!-- Toast -->
@@ -10,9 +12,9 @@
         leave-from-class="translate-y-0 opacity-100 sm:translate-x-0"
         leave-to-class="translate-y-3 opacity-0 sm:translate-x-3 sm:translate-y-0"
       >
-        <div v-if="toast.show" class="fixed right-4 top-4 z-[9999] w-[calc(100%-2rem)] max-w-sm">
+        <div v-if="toast.show" class="fixed right-4 top-4 z-9999 w-[calc(100%-2rem)] max-w-sm">
           <div
-            class="rounded-[1.5rem] border bg-white/95 p-4 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur-xl"
+            class="rounded-3xl border bg-white/95 p-4 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur-xl"
             :class="toast.type === 'success' ? 'border-emerald-200' : 'border-red-200'"
           >
             <div class="flex items-start gap-3">
@@ -91,19 +93,11 @@
             <button
               type="button"
               class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-black text-neutral-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-              @click="reloadNews"
+              @click="reloadNews({ silent: false, retry: 2 })"
             >
               <Icon icon="solar:refresh-bold-duotone" class="h-5 w-5" :class="isLoading ? 'animate-spin' : ''" />
               Refresh
             </button>
-
-            <NuxtLink
-              to="/news"
-              class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-4 text-sm font-black text-blue-700 transition hover:border-blue-200 hover:bg-blue-100"
-            >
-              <Icon icon="solar:eye-bold-duotone" class="h-5 w-5" />
-              Lihat Publik
-            </NuxtLink>
 
             <button
               type="button"
@@ -118,10 +112,10 @@
       </section>
 
       <!-- Toolbar -->
-      <section class="rounded-[1.5rem] border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
+      <section class="rounded-3xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
         <div class="grid gap-3 lg:grid-cols-[1fr_190px_170px]">
           <div class="relative">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-neutral-400">
+            <div class="pointer-events-none absolute inset-y-0 right-4 flex items-center pl-4 text-neutral-400">
               <Icon icon="solar:magnifer-linear" class="h-5 w-5" />
             </div>
 
@@ -195,14 +189,14 @@
           <div class="relative h-40 bg-neutral-100">
             <img v-if="item.cover" :src="item.cover" :alt="item.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
 
-            <div v-else class="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 via-white to-sky-50 text-blue-600">
+            <div v-else class="flex h-full w-full items-center justify-center bg-linear-to-br from-blue-50 via-white to-sky-50 text-blue-600">
               <Icon icon="solar:gallery-wide-bold-duotone" class="h-10 w-10" />
             </div>
 
-            <div class="absolute inset-0 bg-gradient-to-t from-neutral-950/55 via-neutral-950/10 to-transparent"></div>
+            <div class="absolute inset-0 bg-linear-to-t from-neutral-950/55 via-neutral-950/10 to-transparent"></div>
 
             <div class="absolute left-3 top-3 flex flex-wrap gap-2">
-              <span class="rounded-full bg-white/90 px-3 py-1 text-[11px] font-black text-neutral-900 shadow-sm backdrop-blur">
+              <span class="rounded-full bg-white/90 px-3 py-1 text-[11px] font-black text-neutral-900 shadow-sm backdrop-blur hidden">
                 {{ item.category || profile.defaultCategory }}
               </span>
 
@@ -728,7 +722,7 @@
     <!-- Insert Link Modal -->
     <Teleport to="body">
       <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="showLinkModal" class="fixed inset-0 z-[9993] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm">
+        <div v-if="showLinkModal" class="fixed inset-0 z-9993 flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm">
           <div class="w-full max-w-lg rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-2xl">
             <div class="flex items-start justify-between gap-4">
               <div>
@@ -893,6 +887,7 @@ import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, rea
 import { useHead, useRequestURL, useRuntimeConfig, useSeoMeta } from 'nuxt/app'
 import { useNews } from '../../composables/data/useNews'
 import { useCloudinaryUpload } from '../../composables/useCloudinaryUpload'
+import { useAppApi } from '../../composables/useAppApi'
 
 definePageMeta({
   layout: 'app',
@@ -961,6 +956,10 @@ const selectedCategory = ref('all')
 const selectedStatus = ref<'all' | NewsStatus>('all')
 const page = ref(1)
 const pageSize = 12
+const localNewsCache = ref<any[]>([])
+const localNewsError = ref('')
+const localNewsBooted = ref(false)
+const localNewsReloading = ref(false)
 
 const showForm = ref(false)
 const showDelete = ref(false)
@@ -1049,6 +1048,40 @@ const tenantSlug = computed(() => {
   return String(config.public.clientName || 'obayan').trim().toLowerCase()
 })
 
+const { tenantApiUrl } = useAppApi()
+const newsApiUrl = computed(() => tenantApiUrl(tenantSlug.value, '/news'))
+
+const {
+  data: fetchedNews,
+  pending: fetchedNewsPending,
+  error: fetchedNewsError,
+  refresh: refreshFetchedNews
+} = await useFetch<any>(newsApiUrl, {
+  key: computed(() => `app-news-sql-${tenantSlug.value}`),
+  query: computed(() => ({
+    limit: 100,
+    sort: 'newest'
+  })),
+  watch: [tenantSlug],
+  default: () => ({
+    data: [],
+    meta: {
+      page: 1,
+      limit: 100,
+      total: 0,
+      totalPages: 1
+    }
+  })
+})
+
+watch(
+  fetchedNews,
+  (value) => {
+    syncLocalNewsCacheFromComposable(value)
+  },
+  { immediate: true }
+)
+
 const appLogo = computed(() => {
   return String(
     config.public.appLogo ||
@@ -1110,18 +1143,47 @@ const themeVars = computed<Record<string, string>>(() => ({
 const categoryOptions = computed(() => profile.value.categories)
 
 const rawItems = computed<any[]>(() => {
-  const direct = unref(newsSQL.items) || unref(newsSQL.news) || unref(newsSQL.rows) || unref(newsSQL.data)
-  if (Array.isArray(direct)) return direct
-  if (Array.isArray(direct?.data)) return direct.data
-  return []
+  const fromFetch = unref(fetchedNews)
+
+  if (Array.isArray(fromFetch) && fromFetch.length) return fromFetch
+  if (Array.isArray(fromFetch?.data) && fromFetch.data.length) return fromFetch.data
+  if (Array.isArray(fromFetch?.items) && fromFetch.items.length) return fromFetch.items
+
+  const direct =
+    unref(newsSQL.items) ||
+    unref(newsSQL.news) ||
+    unref(newsSQL.rows) ||
+    unref(newsSQL.data)
+
+  if (Array.isArray(direct) && direct.length) return direct
+  if (Array.isArray(direct?.data) && direct.data.length) return direct.data
+  if (Array.isArray(direct?.items) && direct.items.length) return direct.items
+
+  return localNewsCache.value
 })
 
-const isLoading = computed(() => Boolean(unref(newsSQL.pending) || unref(newsSQL.loading)))
+const isLoading = computed(() => {
+  return Boolean(
+    localNewsReloading.value ||
+    unref(fetchedNewsPending) ||
+    unref(newsSQL.pending) ||
+    unref(newsSQL.loading)
+  )
+})
 
 const visibleError = computed(() => {
+  if (rawItems.value.length > 0) return ''
+
+  if (localNewsError.value) return localNewsError.value
+
+  const fetchError = unref(fetchedNewsError)
+  if (fetchError) return getErrorMessage(fetchError)
+
   const value = unref(newsSQL.error) || unref(newsSQL.errorMessage) || ''
+
   if (!value) return ''
   if (typeof value === 'string') return value
+
   return value?.message || 'Terjadi kesalahan saat memuat berita.'
 })
 
@@ -1231,9 +1293,10 @@ useHead(() => ({
   meta: [{ name: 'theme-color', content: profile.value.brand }]
 }))
 
-onMounted(async () => {
+onMounted(() => {
   ensureEditor()
-  await reloadNews()
+  restoreNewsCache()
+  localNewsBooted.value = true
 })
 
 onBeforeUnmount(() => {
@@ -1372,13 +1435,109 @@ function ensureEditor() {
   })
 }
 
-async function reloadNews() {
+async function reloadNews(options?: {
+  silent?: boolean
+  retry?: number
+}) {
+  const silent = Boolean(options?.silent)
+  void options?.retry
+
+  localNewsReloading.value = true
+  localNewsError.value = ''
+
   try {
-    const fn = newsSQL.loadNews || newsSQL.fetchNews || newsSQL.fetchItems || newsSQL.refresh
-    if (typeof fn === 'function') await fn({ tenantSlug: tenantSlug.value })
+    await refreshFetchedNews()
+    syncLocalNewsCacheFromComposable(fetchedNews.value)
+
+    return fetchedNews.value
   } catch (error: any) {
-    showToast('error', 'Gagal Memuat Berita', error?.message || 'Data berita gagal dimuat.')
+    const message = getErrorMessage(error)
+
+    localNewsError.value = message
+
+    if (!silent && localNewsCache.value.length === 0) {
+      showToast('error', 'Gagal Memuat Berita', message)
+    }
+
+    return null
+  } finally {
+    localNewsReloading.value = false
   }
+}
+
+function syncLocalNewsCacheFromComposable(result?: any) {
+  const direct =
+    unref(newsSQL.items) ||
+    unref(newsSQL.news) ||
+    unref(newsSQL.rows) ||
+    unref(newsSQL.data) ||
+    result?.data ||
+    result
+
+  let nextItems: any[] = []
+
+  if (Array.isArray(direct)) {
+    nextItems = direct
+  } else if (Array.isArray(direct?.data)) {
+    nextItems = direct.data
+  }
+
+  if (!nextItems.length) return
+
+  localNewsCache.value = nextItems
+  saveNewsCache(nextItems)
+}
+
+function getNewsCacheKey() {
+  return `news_cache:${tenantSlug.value}`
+}
+
+function restoreNewsCache() {
+  if (!import.meta.client) return
+
+  try {
+    const raw = localStorage.getItem(getNewsCacheKey())
+    if (!raw) return
+
+    const parsed = JSON.parse(raw)
+
+    if (Array.isArray(parsed)) {
+      localNewsCache.value = parsed
+      return
+    }
+
+    if (Array.isArray(parsed?.items)) {
+      localNewsCache.value = parsed.items
+    }
+  } catch {
+    localNewsCache.value = []
+  }
+}
+
+function saveNewsCache(items: any[]) {
+  if (!import.meta.client) return
+
+  try {
+    localStorage.setItem(
+      getNewsCacheKey(),
+      JSON.stringify({
+        items,
+        savedAt: Date.now()
+      })
+    )
+  } catch {
+    // localStorage penuh / disabled, abaikan.
+  }
+}
+
+function getErrorMessage(error: any) {
+  return (
+    error?.data?.statusMessage ||
+    error?.data?.message ||
+    error?.statusMessage ||
+    error?.message ||
+    'Data berita gagal dimuat.'
+  )
 }
 
 function resetForm() {
@@ -1898,14 +2057,32 @@ async function callDeleteNews(id: string) {
 }
 
 function normalizeNewsItem(item: any): NewsItem {
-  const content = normalizeContent(item?.content || item?.body || item?.description)
-  const publishedAt = normalizeDate(item?.publishedAt || item?.published_at || item?.createdAt || item?.created_at)
+  const content = normalizeContent(
+    item?.content ||
+    item?.body ||
+    item?.descriptionContent ||
+    item?.description ||
+    ''
+  )
+
+  const publishedAt = normalizeDate(
+    item?.publishedAt ||
+    item?.published_at ||
+    item?.createdAt ||
+    item?.created_at
+  )
 
   return {
-    id: String(item?.id || item?.uuid || item?._id || ''),
+    id: String(item?.id || item?.uuid || item?._id || item?.slug || ''),
     title: String(item?.title || 'Tanpa Judul'),
     slug: String(item?.slug || slugify(item?.title || 'tanpa-judul')),
-    excerpt: String(item?.excerpt || item?.summary || ''),
+    excerpt: String(
+      item?.excerpt ||
+      item?.descriptionCard ||
+      item?.summary ||
+      plainTextFromContent(content).slice(0, 160) ||
+      ''
+    ),
     cover: String(item?.cover || item?.coverUrl || item?.cover_url || item?.image || ''),
     category: String(item?.category || profile.value.defaultCategory),
     tags: normalizeTags(item?.tags),

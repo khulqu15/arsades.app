@@ -1,5 +1,6 @@
+<!-- /pages/app/profile.vue -->
 <template>
-  <main class="min-h-screen bg-neutral-50 text-neutral-950">
+  <main class="min-h-screen bg-neutral-50 text-neutral-950" :style="themeVars">
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div class="absolute -left-32 top-0 h-80 w-80 rounded-full bg-blue-100/80 blur-3xl"></div>
       <div class="absolute right-0 top-24 h-96 w-96 rounded-full bg-sky-100/70 blur-3xl"></div>
@@ -18,14 +19,15 @@
             <div class="flex min-w-0 items-end gap-4">
               <div class="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-[1.5rem] border border-white/70 bg-white p-2 shadow-xl shadow-blue-950/10 ring-4 ring-white/45 sm:h-24 sm:w-24">
                 <img
-                  v-if="siteLogo"
+                  v-if="siteLogo && !logoImageFailed"
                   :src="siteLogo"
                   :alt="siteTitle"
                   class="h-full w-full object-contain"
+                  @error="logoImageFailed = true"
                 >
                 <Icon
                   v-else
-                  icon="solar:buildings-3-bold-duotone"
+                  :icon="profileIcon"
                   class="h-10 w-10 text-blue-600"
                 />
               </div>
@@ -33,7 +35,7 @@
               <div class="min-w-0 pb-1">
                 <div class="mb-2 inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-blue-700 shadow-sm backdrop-blur">
                   <Icon icon="solar:settings-bold-duotone" class="h-4 w-4" />
-                  Profil Desa
+                  {{ profileBadge }}
                 </div>
 
                 <h1 class="truncate text-2xl font-black tracking-tight text-white drop-shadow-sm sm:text-3xl">
@@ -41,20 +43,30 @@
                 </h1>
 
                 <p class="mt-1 max-w-2xl truncate text-sm font-semibold text-white/80">
-                  Kelola identitas, tampilan, kontak, dan narasi utama website desa.
+                  Kelola identitas, tampilan, kontak, logo tenant, dan narasi utama website.
                 </p>
               </div>
             </div>
 
             <div class="flex flex-wrap gap-2">
-              <NuxtLink
-                to="/"
+              <a
+                :href="publicWebsiteHref"
                 target="_blank"
+                rel="noopener noreferrer"
                 class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/15 px-4 text-sm font-black text-white shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:bg-white hover:text-neutral-950"
               >
                 <Icon icon="solar:eye-bold-duotone" class="h-5 w-5" />
                 Lihat Website
-              </NuxtLink>
+              </a>
+
+              <button
+                type="button"
+                class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white px-4 text-sm font-black text-blue-700 shadow-lg shadow-blue-950/10 transition hover:-translate-y-0.5 hover:bg-blue-50"
+                @click="refreshSite"
+              >
+                <Icon icon="solar:refresh-bold-duotone" class="h-5 w-5" :class="pending ? 'animate-spin' : ''" />
+                Refresh
+              </button>
 
               <button
                 type="button"
@@ -118,7 +130,7 @@
             </div>
 
             <p class="mt-4 max-w-3xl text-sm font-medium leading-7 text-neutral-600">
-              {{ siteDescription || 'Belum ada deskripsi singkat. Tambahkan narasi agar warga dan pengunjung lebih mudah memahami profil desa.' }}
+              {{ siteDescription || 'Belum ada deskripsi singkat. Tambahkan narasi agar warga dan pengunjung lebih mudah memahami profil website.' }}
             </p>
 
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
@@ -129,8 +141,18 @@
               />
               <InfoCard
                 icon="solar:map-point-bold-duotone"
-                label="Wilayah / Slug"
+                label="Tenant / Slug"
                 :value="tenantSlug"
+              />
+              <InfoCard
+                icon="solar:global-bold-duotone"
+                label="Domain"
+                :value="siteDomain || 'Belum diisi'"
+              />
+              <InfoCard
+                icon="solar:palette-bold-duotone"
+                label="Warna Utama"
+                :value="primaryColor"
               />
             </div>
           </article>
@@ -174,7 +196,7 @@
                   Narasi Profil
                 </p>
                 <h2 class="mt-2 text-xl font-black tracking-tight text-neutral-950">
-                  Tentang Desa
+                  Tentang Website
                 </h2>
               </div>
             </div>
@@ -200,6 +222,28 @@
         <aside class="space-y-5">
           <article class="rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-sm shadow-neutral-900/5">
             <p class="text-sm font-black text-neutral-950">
+              Logo Tenant
+            </p>
+
+            <div class="mt-4 rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">
+              <div class="mx-auto grid h-28 w-28 place-items-center overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white p-3 shadow-sm">
+                <img
+                  v-if="siteLogo && !logoImageFailed"
+                  :src="siteLogo"
+                  :alt="siteTitle"
+                  class="h-full w-full object-contain"
+                  @error="logoImageFailed = true"
+                >
+                <Icon v-else :icon="profileIcon" class="h-12 w-12 text-blue-600" />
+              </div>
+              <p class="mt-4 text-center text-xs font-semibold leading-5 text-neutral-500">
+                Fallback logo mengikuti halaman berita: Martopuro memakai <span class="font-black text-neutral-800">/assets/images/logo-martopuro.png</span>, selain itu memakai <span class="font-black text-neutral-800">/logo.png</span>.
+              </p>
+            </div>
+          </article>
+
+          <article class="rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-sm shadow-neutral-900/5">
+            <p class="text-sm font-black text-neutral-950">
               Kesiapan Profil
             </p>
 
@@ -216,7 +260,7 @@
 
           <article class="rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-sm shadow-neutral-900/5">
             <p class="text-sm font-black text-neutral-950">
-              Kontak Desa
+              Kontak
             </p>
 
             <div class="mt-4 space-y-3">
@@ -286,14 +330,14 @@
                 <div class="flex min-w-0 items-center gap-3">
                   <div class="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl border border-neutral-200 bg-white p-1.5 shadow-sm">
                     <img
-                      v-if="form.logoUrl"
-                      :src="form.logoUrl"
+                      v-if="formLogoPreview"
+                      :src="formLogoPreview"
                       :alt="form.displayName || form.name"
                       class="h-full w-full object-contain"
                     >
                     <Icon
                       v-else
-                      icon="solar:buildings-3-bold-duotone"
+                      :icon="profileIcon"
                       class="h-7 w-7 text-blue-600"
                     />
                   </div>
@@ -303,7 +347,7 @@
                       Pengaturan Profil
                     </p>
                     <h2 class="truncate text-lg font-black text-neutral-950">
-                      {{ form.displayName || form.name || 'Profil Website Desa' }}
+                      {{ form.displayName || form.name || 'Profil Website' }}
                     </h2>
                   </div>
                 </div>
@@ -361,7 +405,7 @@
                   <SectionTitle
                     icon="solar:document-add-bold-duotone"
                     title="Identitas Dasar"
-                    subtitle="Atur nama, alamat website, dan deskripsi singkat."
+                    subtitle="Atur nama, alamat website, status, dan deskripsi singkat."
                   />
 
                   <div class="mt-5 grid gap-4 sm:grid-cols-2">
@@ -373,7 +417,7 @@
                       <input v-model.trim="form.displayName" type="text" class="input-field" placeholder="Contoh: Website Desa Martopuro">
                     </Field>
 
-                    <Field label="Kode Wilayah">
+                    <Field label="Tenant / Slug">
                       <input v-model.trim="form.slug" type="text" class="input-field" placeholder="martopuro">
                     </Field>
 
@@ -385,11 +429,11 @@
                     </Field>
 
                     <Field label="Alamat Domain">
-                      <input v-model.trim="form.domain" type="text" class="input-field" placeholder="martopuro.desa.id">
+                      <input v-model.trim="form.domain" type="text" class="input-field" placeholder="martopuro.com">
                     </Field>
 
                     <Field label="Alamat Website">
-                      <input v-model.trim="form.siteUrl" type="url" class="input-field" placeholder="https://martopuro.desa.id">
+                      <input v-model.trim="form.siteUrl" type="url" class="input-field" placeholder="https://martopuro.com">
                     </Field>
 
                     <Field label="Deskripsi Singkat" class="sm:col-span-2">
@@ -397,7 +441,7 @@
                         v-model.trim="form.description"
                         rows="4"
                         class="textarea-field"
-                        placeholder="Tulis ringkasan singkat tentang desa..."
+                        placeholder="Tulis ringkasan singkat tentang website/tenant..."
                       ></textarea>
                     </Field>
                   </div>
@@ -412,7 +456,7 @@
                   <SectionTitle
                     icon="solar:palette-bold-duotone"
                     title="Brand & Tampilan"
-                    subtitle="Atur logo, ikon, gambar berbagi, dan warna utama website."
+                    subtitle="Atur logo tenant, ikon, gambar berbagi, dan warna utama website."
                   />
 
                   <div class="mt-5 grid gap-4">
@@ -420,6 +464,7 @@
                       <MediaInput
                         label="Logo Website"
                         :value="form.logoUrl"
+                        :fallback="defaultLogo"
                         preview="contain"
                         @update:value="form.logoUrl = $event"
                         @upload="uploadToField($event, 'logoUrl')"
@@ -428,6 +473,7 @@
                       <MediaInput
                         label="Ikon Website"
                         :value="form.faviconUrl"
+                        :fallback="form.logoUrl || defaultLogo"
                         preview="contain"
                         @update:value="form.faviconUrl = $event"
                         @upload="uploadToField($event, 'faviconUrl')"
@@ -436,6 +482,7 @@
                       <MediaInput
                         label="Gambar Berbagi"
                         :value="form.ogImageUrl"
+                        :fallback="form.heroImageUrl"
                         preview="cover"
                         @update:value="form.ogImageUrl = $event"
                         @upload="uploadToField($event, 'ogImageUrl')"
@@ -490,12 +537,12 @@
                             v-model.trim="form.heroSubtitle"
                             rows="3"
                             class="textarea-field"
-                            placeholder="Tulis kalimat pendek untuk memperkenalkan desa..."
+                            placeholder="Tulis kalimat pendek untuk memperkenalkan website..."
                           ></textarea>
                         </Field>
 
                         <Field label="Label Tombol">
-                          <input v-model.trim="form.heroCtaLabel" type="text" class="input-field" placeholder="Jelajahi Desa">
+                          <input v-model.trim="form.heroCtaLabel" type="text" class="input-field" placeholder="Jelajahi Website">
                         </Field>
 
                         <Field label="Tujuan Tombol">
@@ -532,7 +579,7 @@
                               <span class="text-blue-200">{{ form.heroHighlight }}</span>
                             </p>
                             <p class="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-white/75">
-                              {{ form.heroSubtitle || 'Subtitle hero website desa.' }}
+                              {{ form.heroSubtitle || 'Subtitle hero website.' }}
                             </p>
                           </div>
                         </div>
@@ -544,7 +591,9 @@
                     <p class="mb-2 text-sm font-black text-neutral-950">
                       Narasi Profil
                     </p>
-                    <RichTextEditor />
+                    <ClientOnly>
+                      <RichTextEditor />
+                    </ClientOnly>
                   </div>
                 </div>
               </section>
@@ -555,7 +604,7 @@
                   <SectionTitle
                     icon="solar:phone-calling-rounded-bold-duotone"
                     title="Kontak & Media Sosial"
-                    subtitle="Lengkapi kontak agar warga mudah menghubungi pengelola desa."
+                    subtitle="Lengkapi kontak agar pengunjung mudah menghubungi pengelola."
                   />
 
                   <div class="mt-5 grid gap-4 sm:grid-cols-2">
@@ -580,7 +629,7 @@
                         v-model.trim="form.contactAddress"
                         rows="3"
                         class="textarea-field"
-                        placeholder="Tulis alamat kantor desa..."
+                        placeholder="Tulis alamat kantor atau lokasi tenant..."
                       ></textarea>
                     </Field>
 
@@ -621,10 +670,12 @@
                   <div class="mt-5 grid gap-3 sm:grid-cols-2">
                     <ReviewRow label="Nama Website" :value="form.displayName || form.name || '-'" />
                     <ReviewRow label="Status" :value="form.status === 'active' ? 'Aktif' : 'Tidak Aktif'" />
+                    <ReviewRow label="Tenant" :value="form.slug || tenantSlug || '-'" />
                     <ReviewRow label="Domain" :value="form.domain || '-'" />
-                    <ReviewRow label="Logo" :value="form.logoUrl ? 'Sudah ada' : 'Belum ada'" />
+                    <ReviewRow label="Logo" :value="form.logoUrl ? 'Logo tenant' : `Default: ${defaultLogo}`" />
                     <ReviewRow label="Hero" :value="form.heroTitle || '-'" />
                     <ReviewRow label="Kontak" :value="form.contactPhone || form.contactWhatsapp || form.contactEmail || '-'" />
+                    <ReviewRow label="Warna" :value="form.primaryColor || '#2563eb'" />
                   </div>
 
                   <div class="mt-5 rounded-[1.5rem] border border-blue-100 bg-blue-50 p-4">
@@ -637,7 +688,7 @@
                           Data siap disimpan
                         </p>
                         <p class="mt-1 text-sm font-semibold leading-6 text-blue-700">
-                          Setelah disimpan, perubahan akan tampil pada website publik sesuai data yang berhasil diperbarui.
+                          Perubahan akan dikirim ke endpoint tenant site sesuai slug aktif: <span class="font-black">{{ tenantSlug }}</span>.
                         </p>
                       </div>
                     </div>
@@ -853,16 +904,16 @@
               </template>
 
               <template v-else>
-                <input
+                <textarea
                   v-model.trim="embedForm.url"
-                  type="url"
-                  class="input-field"
+                  rows="4"
+                  class="textarea-field"
                   :placeholder="embedPlaceholder"
-                >
+                ></textarea>
               </template>
 
               <div class="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-semibold leading-5 text-blue-700">
-                Kamu bisa mengunggah file dari perangkat atau memakai tautan yang sudah tersedia.
+                Kamu bisa mengunggah file dari perangkat atau memakai tautan/kode embed yang sudah tersedia.
               </div>
             </div>
 
@@ -982,14 +1033,45 @@ import { Table } from '@tiptap/extension-table'
 import TableRow from '@tiptap/extension-table-row'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
+import { useHead, useRequestURL, useRuntimeConfig, useSeoMeta } from 'nuxt/app'
 import { useCloudinaryUpload } from '../../composables/useCloudinaryUpload'
 import { useAppApi } from '../../composables/useAppApi'
-import { useTenantSite } from '../../composables/data/useTenantSite'
 
+// Sesuaikan dengan types project kamu jika sudah tersedia.
 type SiteStatus = 'active' | 'inactive'
+type TenantMode = 'martopuro' | 'obayan'
 type ToastType = 'success' | 'error'
 type UploadField = 'logoUrl' | 'faviconUrl' | 'ogImageUrl' | 'heroImageUrl'
 type EmbedType = 'image' | 'youtube' | 'pdf' | 'maps'
+
+type TenantSiteConfigLike = {
+  id?: string
+  name?: string | null
+  displayName?: string | null
+  slug?: string | null
+  tenantType?: string | null
+  domain?: string | null
+  siteUrl?: string | null
+  logoUrl?: string | null
+  faviconUrl?: string | null
+  ogImageUrl?: string | null
+  primaryColor?: string | null
+  description?: string | null
+  status?: SiteStatus | string | null
+  subscription?: Record<string, any>
+  features?: Record<string, any>
+  metadata?: Record<string, any>
+  theme?: Record<string, any>
+  seo?: Record<string, any>
+  hero?: Record<string, any>
+  contact?: Record<string, any>
+  statistic?: Record<string, any>
+  culture?: Record<string, any>
+  warta?: Record<string, any>
+  footer?: Record<string, any>
+  navigation?: any[]
+  social?: Record<string, any>
+}
 
 definePageMeta({
   layout: 'app',
@@ -1022,20 +1104,120 @@ const Iframe = Node.create({
 })
 
 const runtime = useRuntimeConfig()
-const { tenantSlug, site, pending, error, refresh } = useTenantSite()
+const requestUrl = useRequestURL()
 const { tenantApiUrl } = useAppApi()
 const mediaUploader = useCloudinaryUpload() as any
+
+const hostname = computed(() => {
+  return String(requestUrl.hostname || '')
+    .replace(/^www\./, '')
+    .toLowerCase()
+})
+
+const envClientName = computed(() => {
+  return String(runtime.public.clientName || 'obayan')
+    .trim()
+    .toLowerCase()
+})
+
+const isRailwayDomain = computed(() => {
+  return (
+    hostname.value === 'obayanweb-production.up.railway.app' ||
+    hostname.value.endsWith('.railway.app') ||
+    hostname.value.endsWith('.up.railway.app')
+  )
+})
+
+const tenantSlug = computed(() => {
+  if (isRailwayDomain.value) return 'martopuro'
+  if (hostname.value.includes('martopuro')) return 'martopuro'
+  if (hostname.value.includes('obayan')) return 'obayan'
+  return envClientName.value || 'obayan'
+})
+
+const tenantMode = computed<TenantMode>(() => {
+  return tenantSlug.value === 'martopuro' ? 'martopuro' : 'obayan'
+})
+
+const apiUrl = computed(() => tenantApiUrl(tenantSlug.value, '/site'))
+
+function createDefaultSite(slug: string): TenantSiteConfigLike {
+  const isMartopuro = slug === 'martopuro'
+  const name = isMartopuro ? 'Desa Martopuro' : 'Obayan'
+
+  return {
+    id: '',
+    name,
+    displayName: name,
+    slug,
+    tenantType: isMartopuro ? 'village' : 'custom',
+    domain: null,
+    siteUrl: null,
+    logoUrl: null,
+    faviconUrl: null,
+    ogImageUrl: null,
+    primaryColor: '#2563eb',
+    description: null,
+    status: 'active',
+    subscription: {
+      plan: 'free',
+      status: 'active',
+      startedAt: null,
+      endsAt: null,
+      trialEndsAt: null,
+      isActive: true,
+      isPro: false,
+      config: {}
+    },
+    features: {
+      news: true,
+      onlineLetter: false,
+      finance: false,
+      letterC: false
+    },
+    metadata: {},
+    theme: {},
+    seo: {},
+    hero: {},
+    contact: {},
+    statistic: {},
+    culture: {},
+    warta: {},
+    footer: {},
+    navigation: [],
+    social: {}
+  }
+}
+
+const {
+  data: siteResponse,
+  pending,
+  error,
+  refresh
+} = await useFetch<any>(apiUrl, {
+  key: computed(() => `app-profile-site-${tenantSlug.value}`),
+  watch: [tenantSlug],
+  default: () => ({
+    data: createDefaultSite(tenantSlug.value)
+  })
+})
+
+const site = computed<TenantSiteConfigLike>(() => normalizeSite(siteResponse.value?.data, tenantSlug.value))
+const siteData = computed<TenantSiteConfigLike>(() => site.value || createDefaultSite(tenantSlug.value))
 
 const isEditorOpen = ref(false)
 const isCloseConfirmOpen = ref(false)
 const isLinkModalOpen = ref(false)
 const isEmbedModalOpen = ref(false)
 const isSaving = ref(false)
-const isUploading = ref(false)
+const localUploading = ref(false)
 const embedMode = ref<'upload' | 'url'>('url')
 const embedFile = ref<File | null>(null)
 const embedFileInput = ref<HTMLInputElement | null>(null)
 const activeStep = ref(0)
+const logoImageFailed = ref(false)
+
+const isUploading = computed(() => Boolean(localUploading.value || unref(mediaUploader.uploading)))
 
 const steps = [
   { key: 'identity', label: 'Identitas' },
@@ -1115,7 +1297,9 @@ const editor = useEditor({
       autolink: true,
       linkOnPaste: true,
       HTMLAttributes: {
-        class: 'text-blue-600 font-bold underline underline-offset-4'
+        class: 'text-blue-600 font-bold underline underline-offset-4',
+        target: '_blank',
+        rel: 'noopener noreferrer'
       }
     }),
     Image.configure({
@@ -1141,7 +1325,7 @@ const editor = useEditor({
     TableCell,
     Iframe,
     Placeholder.configure({
-      placeholder: 'Tulis profil desa, sejarah singkat, visi, misi, pelayanan, atau informasi penting lainnya...'
+      placeholder: 'Tulis profil, sejarah singkat, visi, misi, pelayanan, atau informasi penting lainnya...'
     })
   ],
   content: '',
@@ -1155,59 +1339,85 @@ const editor = useEditor({
   }
 })
 
-const visibleError = computed(() => {
-  if (!error.value) return ''
-  return error.value?.message || 'Data profil belum bisa dimuat.'
+const defaultLogo = computed(() => {
+  return tenantMode.value === 'martopuro'
+    ? '/assets/images/logo-martopuro.png'
+    : '/logo.png'
 })
 
-const siteData = computed<any>(() => site.value || {})
+const defaultProfileName = computed(() => {
+  return tenantMode.value === 'martopuro' ? 'Desa Martopuro' : 'Obayan'
+})
+
+const profileBadge = computed(() => {
+  return tenantMode.value === 'martopuro' ? 'Profil Desa' : 'Profil Platform'
+})
+
+const profileIcon = computed(() => {
+  return tenantMode.value === 'martopuro' ? 'solar:buildings-3-bold-duotone' : 'solar:widget-5-bold-duotone'
+})
+
+const primaryColor = computed(() => {
+  return cleanString(siteData.value.primaryColor || siteData.value.theme?.primaryColor || form.primaryColor || '#2563eb')
+})
+
+const themeVars = computed<Record<string, string>>(() => ({
+  '--brand': primaryColor.value || '#2563eb',
+  '--brand-soft': '#eff6ff',
+  '--brand-ring': 'rgba(37, 99, 235, 0.14)'
+}))
 
 const siteTitle = computed(() => {
-  return String(siteData.value.displayName || siteData.value.name || tenantSlug.value || 'Website Desa')
+  return cleanString(siteData.value.displayName || siteData.value.name || defaultProfileName.value)
 })
 
 const siteLogo = computed(() => {
-  return String(siteData.value.logoUrl || form.logoUrl || runtime.public.appLogo || '').trim()
+  return cleanString(
+    siteData.value.logoUrl ||
+    form.logoUrl ||
+    runtime.public.appLogo ||
+    runtime.public.logoUrl ||
+    runtime.public.siteLogo ||
+    runtime.public.logo ||
+    defaultLogo.value
+  )
 })
 
-const siteDescription = computed(() => {
-  return String(siteData.value.description || '').trim()
+const formLogoPreview = computed(() => {
+  return cleanString(form.logoUrl || siteData.value.logoUrl || defaultLogo.value)
 })
 
-const siteStatus = computed<SiteStatus>(() => {
-  return siteData.value.status === 'inactive' ? 'inactive' : 'active'
+const siteDescription = computed(() => cleanString(siteData.value.description))
+const siteStatus = computed<SiteStatus>(() => siteData.value.status === 'inactive' ? 'inactive' : 'active')
+const siteStatusLabel = computed(() => siteStatus.value === 'active' ? 'Aktif' : 'Tidak Aktif')
+const siteDomain = computed(() => cleanString(siteData.value.domain))
+const siteUrl = computed(() => cleanString(siteData.value.siteUrl || siteData.value.domain))
+
+const publicWebsiteHref = computed(() => {
+  const value = cleanString(siteData.value.siteUrl)
+  if (isHttpUrl(value)) return value
+
+  const domain = cleanString(siteData.value.domain)
+  if (domain) return `https://${domain.replace(/^https?:\/\//, '')}`
+
+  return '/'
 })
 
-const siteStatusLabel = computed(() => {
-  return siteStatus.value === 'active' ? 'Aktif' : 'Tidak Aktif'
-})
-
-const siteUrl = computed(() => {
-  return String(siteData.value.siteUrl || siteData.value.domain || '').trim()
-})
-
-const heroTitle = computed(() => {
-  return String(siteData.value.hero?.title || siteData.value.hero?.heading || '').trim()
-})
-
-const heroSubtitle = computed(() => {
-  return String(siteData.value.hero?.subtitle || siteData.value.hero?.description || '').trim()
-})
-
-const heroImage = computed(() => {
-  return String(siteData.value.hero?.imageUrl || siteData.value.hero?.image || siteData.value.ogImageUrl || '').trim()
-})
-
-const aboutHtml = computed(() => {
-  return String(siteData.value.hero?.contentHtml || siteData.value.metadata?.aboutHtml || siteData.value.description || '').trim()
-})
-
+const heroTitle = computed(() => cleanString(siteData.value.hero?.title || siteData.value.hero?.heading))
+const heroSubtitle = computed(() => cleanString(siteData.value.hero?.subtitle || siteData.value.hero?.description))
+const heroImage = computed(() => cleanString(siteData.value.hero?.imageUrl || siteData.value.hero?.image || siteData.value.ogImageUrl))
+const aboutHtml = computed(() => cleanString(siteData.value.hero?.contentHtml || siteData.value.metadata?.aboutHtml || siteData.value.description))
 const safeAboutHtml = computed(() => sanitizeHtml(aboutHtml.value))
 
-const contactPhone = computed(() => String(siteData.value.contact?.phone || '').trim())
-const contactWhatsapp = computed(() => String(siteData.value.contact?.whatsapp || '').trim())
-const contactEmail = computed(() => String(siteData.value.contact?.email || '').trim())
-const contactAddress = computed(() => String(siteData.value.contact?.address || '').trim())
+const contactPhone = computed(() => cleanString(siteData.value.contact?.phone || siteData.value.contact?.telp || siteData.value.contact?.telephone))
+const contactWhatsapp = computed(() => cleanString(siteData.value.contact?.whatsapp || siteData.value.contact?.wa))
+const contactEmail = computed(() => cleanString(siteData.value.contact?.email))
+const contactAddress = computed(() => cleanString(siteData.value.contact?.address || siteData.value.contact?.alamat))
+
+const visibleError = computed(() => {
+  if (!error.value) return ''
+  return getErrorMessage(error.value, 'Data profil belum bisa dimuat.')
+})
 
 const publicLinks = [
   { label: 'Berita', href: '/news', icon: 'solar:document-text-bold-duotone' },
@@ -1220,12 +1430,12 @@ const publicLinks = [
 const readinessItems = computed(() => [
   {
     label: 'Logo website',
-    description: form.logoUrl || siteData.value.logoUrl ? 'Logo sudah tersedia.' : 'Tambahkan logo resmi desa.',
-    done: Boolean(form.logoUrl || siteData.value.logoUrl)
+    description: form.logoUrl || siteData.value.logoUrl ? 'Logo tenant sudah tersedia.' : 'Masih memakai logo default yang sama dengan halaman berita.',
+    done: Boolean(form.logoUrl || siteData.value.logoUrl || defaultLogo.value)
   },
   {
     label: 'Deskripsi profil',
-    description: form.description || siteData.value.description ? 'Narasi singkat sudah tersedia.' : 'Tambahkan deskripsi singkat desa.',
+    description: form.description || siteData.value.description ? 'Narasi singkat sudah tersedia.' : 'Tambahkan deskripsi singkat website.',
     done: Boolean(form.description || siteData.value.description)
   },
   {
@@ -1234,24 +1444,13 @@ const readinessItems = computed(() => [
     done: Boolean(heroTitle.value || form.heroTitle)
   },
   {
-    label: 'Kontak warga',
+    label: 'Kontak pengunjung',
     description: contactPhone.value || contactWhatsapp.value || contactEmail.value || form.contactPhone || form.contactWhatsapp || form.contactEmail
       ? 'Kontak sudah tersedia.'
       : 'Lengkapi nomor atau email.',
     done: Boolean(contactPhone.value || contactWhatsapp.value || contactEmail.value || form.contactPhone || form.contactWhatsapp || form.contactEmail)
   }
 ])
-
-const embedTitle = computed(() => {
-  const labels: Record<EmbedType, string> = {
-    image: 'Gambar',
-    youtube: 'YouTube',
-    pdf: 'PDF',
-    maps: 'Peta'
-  }
-
-  return labels[embedForm.type]
-})
 
 const embedModalTitle = computed(() => {
   if (embedForm.type === 'image') return 'Tambahkan Gambar'
@@ -1267,9 +1466,7 @@ const embedIcon = computed(() => {
   return 'solar:map-point-bold-duotone'
 })
 
-const isUploadableEmbed = computed(() => {
-  return embedForm.type === 'image' || embedForm.type === 'pdf'
-})
+const isUploadableEmbed = computed(() => embedForm.type === 'image' || embedForm.type === 'pdf')
 
 const embedAccept = computed(() => {
   if (embedForm.type === 'pdf') return 'application/pdf'
@@ -1277,30 +1474,25 @@ const embedAccept = computed(() => {
 })
 
 const canInsertEmbed = computed(() => {
-  if (isUploadableEmbed.value && embedMode.value === 'upload') {
-    return Boolean(embedFile.value)
-  }
-
+  if (isUploadableEmbed.value && embedMode.value === 'upload') return Boolean(embedFile.value)
   return Boolean(embedForm.url.trim())
-})
-
-const embedInputLabel = computed(() => {
-  if (embedForm.type === 'image') return 'Alamat gambar'
-  if (embedForm.type === 'youtube') return 'Alamat video'
-  if (embedForm.type === 'pdf') return 'Alamat dokumen'
-  return 'Alamat peta'
 })
 
 const embedPlaceholder = computed(() => {
   if (embedForm.type === 'image') return 'Tempel tautan gambar, misalnya https://domain.com/gambar.jpg'
   if (embedForm.type === 'youtube') return 'Tempel tautan YouTube'
-  if (embedForm.type === 'pdf') return 'Tempel tautan dokumen PDF'
-  return 'Tempel tautan Google Maps'
+  if (embedForm.type === 'pdf') return 'Tempel tautan dokumen PDF atau kode iframe PDF'
+  return 'Tempel tautan atau kode iframe Google Maps'
 })
 
 watch(site, () => {
   hydrateForm()
+  logoImageFailed.value = false
 }, { immediate: true })
+
+watch(tenantSlug, () => {
+  logoImageFailed.value = false
+})
 
 watch(isEditorOpen, async (value) => {
   if (value) {
@@ -1312,56 +1504,115 @@ watch(isEditorOpen, async (value) => {
   }
 })
 
+useSeoMeta({
+  title: () => `Profile · ${siteTitle.value}`,
+  description: () => siteDescription.value || `Pengaturan profil ${siteTitle.value}`,
+  ogTitle: () => `Profile · ${siteTitle.value}`,
+  ogDescription: () => siteDescription.value || `Pengaturan profil ${siteTitle.value}`,
+  robots: 'noindex, nofollow',
+  themeColor: () => primaryColor.value
+})
+
+useHead(() => ({
+  htmlAttrs: { lang: 'id' },
+  meta: [{ name: 'theme-color', content: primaryColor.value }]
+}))
+
 onBeforeUnmount(() => {
   document.body.style.overflow = ''
   if (toastTimer) clearTimeout(toastTimer)
   editor.value?.destroy()
 })
 
-function hydrateForm() {
-  const current = siteData.value || {}
-  const hero = current.hero || {}
-  const theme = current.theme || {}
-  const contact = current.contact || {}
-  const social = current.social || {}
-  const footer = current.footer || {}
-  const metadata = current.metadata || {}
+function normalizeSite(value: any, fallbackSlug: string): TenantSiteConfigLike {
+  const fallback = createDefaultSite(fallbackSlug)
 
-  form.name = String(current.name || '').trim()
-  form.displayName = String(current.displayName || '').trim()
-  form.slug = String(current.slug || tenantSlug.value || '').trim()
-  form.domain = String(current.domain || '').trim()
-  form.siteUrl = String(current.siteUrl || '').trim()
-  form.description = String(current.description || '').trim()
+  if (!value || typeof value !== 'object') return fallback
+
+  return {
+    ...fallback,
+    ...value,
+    slug: cleanSlug(value.slug || fallbackSlug),
+    name: cleanNullableString(value.name) || fallback.name,
+    displayName: cleanNullableString(value.displayName || value.display_name) || cleanNullableString(value.name) || fallback.displayName,
+    tenantType: cleanNullableString(value.tenantType || value.tenant_type) || fallback.tenantType,
+    domain: cleanNullableString(value.domain),
+    siteUrl: cleanNullableString(value.siteUrl || value.site_url),
+    logoUrl: cleanNullableString(value.logoUrl || value.logo_url),
+    faviconUrl: cleanNullableString(value.faviconUrl || value.favicon_url),
+    ogImageUrl: cleanNullableString(value.ogImageUrl || value.og_image_url),
+    primaryColor: cleanNullableString(value.primaryColor || value.primary_color || value.theme?.primaryColor) || fallback.primaryColor,
+    description: cleanNullableString(value.description),
+    status: value.status === 'inactive' ? 'inactive' : 'active',
+    subscription: normalizeObject(value.subscription || fallback.subscription),
+    features: normalizeObject(value.features || fallback.features),
+    metadata: normalizeObject(value.metadata),
+    theme: normalizeObject(value.theme),
+    seo: normalizeObject(value.seo),
+    hero: normalizeObject(value.hero),
+    contact: normalizeObject(value.contact),
+    statistic: normalizeObject(value.statistic),
+    culture: normalizeObject(value.culture),
+    warta: normalizeObject(value.warta),
+    footer: normalizeObject(value.footer),
+    navigation: Array.isArray(value.navigation) ? value.navigation : [],
+    social: normalizeObject(value.social)
+  }
+}
+
+function hydrateForm() {
+  const current = siteData.value || createDefaultSite(tenantSlug.value)
+  const hero = normalizeObject(current.hero)
+  const theme = normalizeObject(current.theme)
+  const contact = normalizeObject(current.contact)
+  const social = normalizeObject(current.social)
+  const footer = normalizeObject(current.footer)
+  const metadata = normalizeObject(current.metadata)
+
+  form.name = cleanString(current.name || defaultProfileName.value)
+  form.displayName = cleanString(current.displayName || current.name || defaultProfileName.value)
+  form.slug = cleanSlug(current.slug || tenantSlug.value)
+  form.domain = cleanString(current.domain)
+  form.siteUrl = cleanString(current.siteUrl)
+  form.description = cleanString(current.description)
   form.status = current.status === 'inactive' ? 'inactive' : 'active'
 
-  form.logoUrl = String(current.logoUrl || '').trim()
-  form.faviconUrl = String(current.faviconUrl || '').trim()
-  form.ogImageUrl = String(current.ogImageUrl || '').trim()
-  form.primaryColor = String(current.primaryColor || theme.primaryColor || '#2563eb').trim()
-  form.themeNote = String(theme.note || metadata.themeNote || '').trim()
+  form.logoUrl = cleanString(current.logoUrl)
+  form.faviconUrl = cleanString(current.faviconUrl)
+  form.ogImageUrl = cleanString(current.ogImageUrl)
+  form.primaryColor = cleanString(current.primaryColor || theme.primaryColor || '#2563eb')
+  form.themeNote = cleanString(theme.note || metadata.themeNote)
 
-  form.heroTitle = String(hero.title || hero.heading || '').trim()
-  form.heroHighlight = String(hero.highlight || '').trim()
-  form.heroSubtitle = String(hero.subtitle || hero.description || '').trim()
-  form.heroImageUrl = String(hero.imageUrl || hero.image || '').trim()
-  form.heroCtaLabel = String(hero.ctaLabel || hero.primaryCta?.label || '').trim()
-  form.heroCtaHref = String(hero.ctaHref || hero.primaryCta?.href || '').trim()
+  form.heroTitle = cleanString(hero.title || hero.heading)
+  form.heroHighlight = cleanString(hero.highlight)
+  form.heroSubtitle = cleanString(hero.subtitle || hero.description)
+  form.heroImageUrl = cleanString(hero.imageUrl || hero.image)
+  form.heroCtaLabel = cleanString(hero.ctaLabel || hero.primaryCta?.label)
+  form.heroCtaHref = cleanString(hero.ctaHref || hero.primaryCta?.href)
 
-  form.aboutHtml = String(hero.contentHtml || metadata.aboutHtml || '').trim()
+  form.aboutHtml = cleanString(hero.contentHtml || metadata.aboutHtml)
 
-  form.contactPhone = String(contact.phone || '').trim()
-  form.contactWhatsapp = String(contact.whatsapp || '').trim()
-  form.contactEmail = String(contact.email || '').trim()
-  form.contactAddress = String(contact.address || '').trim()
-  form.contactMapUrl = String(contact.mapUrl || contact.mapsUrl || '').trim()
+  form.contactPhone = cleanString(contact.phone || contact.telp || contact.telephone)
+  form.contactWhatsapp = cleanString(contact.whatsapp || contact.wa)
+  form.contactEmail = cleanString(contact.email)
+  form.contactAddress = cleanString(contact.address || contact.alamat)
+  form.contactMapUrl = cleanString(contact.mapUrl || contact.mapsUrl || contact.map)
 
-  form.socialInstagram = String(social.instagram || '').trim()
-  form.socialFacebook = String(social.facebook || '').trim()
-  form.socialYoutube = String(social.youtube || '').trim()
-  form.socialTiktok = String(social.tiktok || '').trim()
+  form.socialInstagram = cleanString(social.instagram)
+  form.socialFacebook = cleanString(social.facebook)
+  form.socialYoutube = cleanString(social.youtube)
+  form.socialTiktok = cleanString(social.tiktok)
 
-  form.footerText = String(footer.text || footer.copyright || '').trim()
+  form.footerText = cleanString(footer.text || footer.copyright)
+}
+
+async function refreshSite() {
+  try {
+    await refresh()
+    showToast('success', 'Data diperbarui', 'Profil tenant berhasil dimuat ulang.')
+  } catch (err: any) {
+    showToast('error', 'Gagal memuat ulang', getErrorMessage(err, 'Data profil belum bisa dimuat ulang.'))
+  }
 }
 
 function openEditor() {
@@ -1400,48 +1651,48 @@ async function saveSite() {
   const url = tenantApiUrl(tenantSlug.value, '/site')
 
   try {
-    await $fetch(url, {
-      method: 'PUT',
-      body: payload
-    })
-
-    await refresh()
-    showToast('success', 'Profil tersimpan', 'Perubahan profil website desa berhasil diterapkan.')
-    isEditorOpen.value = false
-  } catch (putError) {
     try {
+      await $fetch(url, {
+        method: 'PUT',
+        body: payload
+      })
+    } catch {
       await $fetch(url, {
         method: 'PATCH',
         body: payload
       })
-
-      await refresh()
-      showToast('success', 'Profil tersimpan', 'Perubahan profil website desa berhasil diterapkan.')
-      isEditorOpen.value = false
-    } catch (patchError: any) {
-      showToast('error', 'Gagal menyimpan', patchError?.data?.message || patchError?.message || 'Periksa kembali data lalu coba lagi.')
     }
+
+    await refresh()
+    showToast('success', 'Profil tersimpan', 'Perubahan profil website berhasil diterapkan.')
+    isEditorOpen.value = false
+  } catch (err: any) {
+    showToast('error', 'Gagal menyimpan', getErrorMessage(err, 'Periksa kembali data lalu coba lagi.'))
   } finally {
     isSaving.value = false
   }
 }
 
 function buildPayload() {
-  const current = siteData.value || {}
+  const current = siteData.value || createDefaultSite(tenantSlug.value)
 
   return {
-    name: form.name,
-    displayName: form.displayName,
-    slug: form.slug || tenantSlug.value,
-    tenantType: current.tenantType || 'custom',
-    domain: form.domain || null,
-    siteUrl: form.siteUrl || null,
-    logoUrl: form.logoUrl || null,
-    faviconUrl: form.faviconUrl || null,
-    ogImageUrl: form.ogImageUrl || null,
+    id: current.id || undefined,
+    name: form.name || defaultProfileName.value,
+    displayName: form.displayName || form.name || defaultProfileName.value,
+    slug: cleanSlug(form.slug || tenantSlug.value),
+    tenantType: current.tenantType || (tenantMode.value === 'martopuro' ? 'village' : 'custom'),
+    domain: nullableString(form.domain),
+    siteUrl: nullableString(form.siteUrl),
+    logoUrl: nullableString(form.logoUrl),
+    faviconUrl: nullableString(form.faviconUrl),
+    ogImageUrl: nullableString(form.ogImageUrl),
     primaryColor: form.primaryColor || '#2563eb',
-    description: form.description || null,
+    description: nullableString(form.description),
     status: form.status,
+
+    subscription: current.subscription || createDefaultSite(tenantSlug.value).subscription,
+    features: current.features || createDefaultSite(tenantSlug.value).features,
 
     theme: {
       ...(current.theme || {}),
@@ -1450,17 +1701,19 @@ function buildPayload() {
     },
     seo: {
       ...(current.seo || {}),
-      title: form.displayName || form.name,
-      description: form.description,
-      ogImage: form.ogImageUrl
+      title: form.displayName || form.name || defaultProfileName.value,
+      description: form.description || '',
+      ogImage: form.ogImageUrl || form.heroImageUrl || form.logoUrl || defaultLogo.value
     },
     hero: {
       ...(current.hero || {}),
       title: form.heroTitle,
+      heading: form.heroTitle,
       highlight: form.heroHighlight,
       subtitle: form.heroSubtitle,
       description: form.heroSubtitle,
       imageUrl: form.heroImageUrl,
+      image: form.heroImageUrl,
       ctaLabel: form.heroCtaLabel,
       ctaHref: form.heroCtaHref,
       primaryCta: {
@@ -1475,7 +1728,8 @@ function buildPayload() {
       whatsapp: form.contactWhatsapp,
       email: form.contactEmail,
       address: form.contactAddress,
-      mapUrl: form.contactMapUrl
+      mapUrl: form.contactMapUrl,
+      mapsUrl: form.contactMapUrl
     },
     footer: {
       ...(current.footer || {}),
@@ -1492,11 +1746,12 @@ function buildPayload() {
     statistic: current.statistic || {},
     culture: current.culture || {},
     warta: current.warta || {},
-    navigation: current.navigation || [],
+    navigation: Array.isArray(current.navigation) ? current.navigation : [],
     metadata: {
       ...(current.metadata || {}),
       aboutHtml: form.aboutHtml,
-      themeNote: form.themeNote
+      themeNote: form.themeNote,
+      defaultLogo: defaultLogo.value
     }
   }
 }
@@ -1518,35 +1773,18 @@ async function uploadToField(event: Event, field: UploadField) {
   }
 }
 
-async function uploadEditorImage(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-
-  if (!file) return
-
-  try {
-    const url = await uploadMedia(file, 'image')
-    embedForm.url = url
-    showToast('success', 'Gambar siap digunakan', 'Gambar berhasil ditambahkan ke form media.')
-  } catch (err: any) {
-    showToast('error', 'Gagal mengunggah', friendlyUploadError(err))
-  } finally {
-    input.value = ''
-  }
-}
-
 async function uploadMedia(file: File, kind: 'image' | 'document' = 'image') {
-  if (isUploading.value || Boolean(unref(mediaUploader.uploading))) {
-    throw new Error('Tunggu proses sebelumnya selesai.')
+  if (localUploading.value || Boolean(unref(mediaUploader.uploading))) {
+    throw new Error('Tunggu proses unggah sebelumnya selesai.')
   }
 
-  isUploading.value = true
+  validateUploadFile(file, kind)
+  localUploading.value = true
 
   try {
-    const method =
-      kind === 'document'
-        ? mediaUploader.uploadFile || mediaUploader.uploadDocument || mediaUploader.uploadRaw || mediaUploader.uploadImage
-        : mediaUploader.uploadImage || mediaUploader.uploadFile || mediaUploader.uploadDocument || mediaUploader.uploadRaw
+    const method = kind === 'document'
+      ? mediaUploader.uploadFile || mediaUploader.uploadDocument || mediaUploader.uploadRaw || mediaUploader.uploadImage
+      : mediaUploader.uploadImage || mediaUploader.uploadFile || mediaUploader.uploadDocument || mediaUploader.uploadRaw
 
     if (typeof method !== 'function') {
       throw new Error('upload-service-not-ready')
@@ -1569,31 +1807,36 @@ async function uploadMedia(file: File, kind: 'image' | 'document' = 'image') {
 
     return url
   } finally {
-    isUploading.value = false
+    localUploading.value = false
   }
 }
 
+function validateUploadFile(file: File, kind: 'image' | 'document') {
+  if (kind === 'document') {
+    if (file.type !== 'application/pdf') throw new Error('Gunakan file PDF.')
+    if (file.size > 10 * 1024 * 1024) throw new Error('Ukuran PDF maksimal 10 MB.')
+    return
+  }
+
+  const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  if (!allowed.includes(file.type)) throw new Error('Gunakan gambar JPG, PNG, atau WebP.')
+  if (file.size > 5 * 1024 * 1024) throw new Error('Ukuran gambar maksimal 5 MB.')
+}
+
 function getUploadedUrl(response: any) {
-  return String(
+  return cleanString(
     response?.secure_url ||
     response?.secureUrl ||
     response?.url ||
     response?.data?.secure_url ||
     response?.data?.secureUrl ||
     response?.data?.url ||
-    response?.file?.url ||
-    ''
-  ).trim()
+    response?.file?.url
+  )
 }
 
 function friendlyUploadError(err: any) {
-  const message = String(
-    err?.data?.message ||
-    err?.data?.statusMessage ||
-    err?.statusMessage ||
-    err?.message ||
-    ''
-  )
+  const message = getErrorMessage(err, '')
 
   if (
     !message ||
@@ -1626,14 +1869,14 @@ function applyLink() {
     editor.value
       .chain()
       .focus()
-      .insertContent(`<a href="${escapeHtml(linkForm.href)}">${escapeHtml(linkForm.text)}</a>`)
+      .insertContent(`<a href="${escapeHtml(linkForm.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkForm.text)}</a>`)
       .run()
   } else {
     editor.value
       .chain()
       .focus()
       .extendMarkRange('link')
-      .setLink({ href: linkForm.href })
+      .setLink({ href: linkForm.href, target: '_blank', rel: 'noopener noreferrer' })
       .run()
   }
 
@@ -1646,20 +1889,14 @@ function openEmbedModal(type: EmbedType) {
   embedMode.value = type === 'image' || type === 'pdf' ? 'upload' : 'url'
   embedFile.value = null
 
-  if (embedFileInput.value) {
-    embedFileInput.value.value = ''
-  }
-
+  if (embedFileInput.value) embedFileInput.value.value = ''
   isEmbedModalOpen.value = true
 }
 
 function closeEmbedModal() {
   isEmbedModalOpen.value = false
   embedFile.value = null
-
-  if (embedFileInput.value) {
-    embedFileInput.value.value = ''
-  }
+  if (embedFileInput.value) embedFileInput.value.value = ''
 }
 
 function openEmbedFilePicker() {
@@ -1669,18 +1906,13 @@ function openEmbedFilePicker() {
 function pickEmbedFile(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0] || null
-
   if (!file) return
-
   embedFile.value = file
 }
 
 function clearEmbedFile() {
   embedFile.value = null
-
-  if (embedFileInput.value) {
-    embedFileInput.value.value = ''
-  }
+  if (embedFileInput.value) embedFileInput.value.value = ''
 }
 
 async function applyEmbed() {
@@ -1698,7 +1930,7 @@ async function applyEmbed() {
       return
     }
   } else {
-    url = embedForm.url.trim()
+    url = extractIframeSrc(embedForm.url.trim())
   }
 
   if (!url) return
@@ -1744,37 +1976,79 @@ async function applyEmbed() {
   closeEmbedModal()
 }
 
+function extractIframeSrc(value: string) {
+  const source = cleanString(value)
+  const match = source.match(/src=["']([^"']+)["']/i)
+  return match?.[1] || source
+}
 
 function formatFileSize(bytes: number) {
   if (!bytes) return '0 KB'
-
   const kb = bytes / 1024
-
   if (kb < 1024) return `${Math.round(kb)} KB`
-
   return `${(kb / 1024).toFixed(1)} MB`
 }
 
-
-function safeDisplayUrl(value: string) {
-  return String(value || '').replace(/^https?:\/\//, '').replace(/\/$/, '')
+function safeDisplayUrl(value: string | null | undefined) {
+  return cleanString(value).replace(/^https?:\/\//, '').replace(/\/$/, '')
 }
 
 function sanitizeHtml(value: string) {
-  return String(value || '')
+  return cleanString(value)
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
     .replace(/\son\w+="[^"]*"/gi, '')
     .replace(/\son\w+='[^']*'/gi, '')
     .replace(/javascript:/gi, '')
 }
 
 function escapeHtml(value: string) {
-  return String(value || '')
+  return cleanString(value)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;')
+}
+
+function cleanString(value: unknown) {
+  return String(value || '').trim()
+}
+
+function nullableString(value: unknown) {
+  const text = cleanString(value)
+  return text || null
+}
+
+function cleanNullableString(value: unknown) {
+  const text = cleanString(value)
+  return text || null
+}
+
+function cleanSlug(value: unknown) {
+  return cleanString(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function normalizeObject(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return value as Record<string, any>
+}
+
+function isHttpUrl(value: string) {
+  return /^https?:\/\//i.test(cleanString(value))
+}
+
+function getErrorMessage(err: any, fallback: string) {
+  return (
+    err?.data?.statusMessage ||
+    err?.data?.message ||
+    err?.statusMessage ||
+    err?.message ||
+    fallback
+  )
 }
 
 function showToast(type: ToastType, title: string, message: string) {
@@ -1932,16 +2206,16 @@ const PreviewCard = defineComponent({
         h('p', { class: 'text-sm font-black text-neutral-950' }, 'Preview Singkat'),
         h('div', { class: 'mt-4 flex items-center gap-3' }, [
           h('div', { class: 'grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 p-2' }, [
-            form.logoUrl
-              ? h('img', { src: form.logoUrl, class: 'h-full w-full object-contain', alt: '' })
-              : h(Icon, { icon: 'solar:buildings-3-bold-duotone', class: 'h-8 w-8 text-blue-600' })
+            form.logoUrl || defaultLogo.value
+              ? h('img', { src: form.logoUrl || defaultLogo.value, class: 'h-full w-full object-contain', alt: '' })
+              : h(Icon, { icon: profileIcon.value, class: 'h-8 w-8 text-blue-600' })
           ]),
           h('div', { class: 'min-w-0' }, [
-            h('p', { class: 'truncate font-black text-neutral-950' }, form.displayName || form.name || 'Website Desa'),
-            h('p', { class: 'truncate text-xs font-semibold text-neutral-500' }, form.siteUrl || form.domain || form.slug || 'alamat website')
+            h('p', { class: 'truncate font-black text-neutral-950' }, form.displayName || form.name || defaultProfileName.value),
+            h('p', { class: 'truncate text-xs font-semibold text-neutral-500' }, form.siteUrl || form.domain || form.slug || tenantSlug.value)
           ])
         ]),
-        h('p', { class: 'mt-4 line-clamp-3 text-sm font-semibold leading-6 text-neutral-500' }, form.description || 'Deskripsi singkat website desa akan tampil di sini.'),
+        h('p', { class: 'mt-4 line-clamp-3 text-sm font-semibold leading-6 text-neutral-500' }, form.description || 'Deskripsi singkat website akan tampil di sini.'),
         h('div', { class: 'mt-4 rounded-2xl bg-blue-50 p-3 text-xs font-black text-blue-700' }, form.heroTitle || 'Judul hero belum diisi')
       ])
   }
@@ -1957,6 +2231,10 @@ const MediaInput = defineComponent({
       type: String,
       default: ''
     },
+    fallback: {
+      type: String,
+      default: ''
+    },
     preview: {
       type: String,
       default: 'cover'
@@ -1968,8 +2246,10 @@ const MediaInput = defineComponent({
   },
   emits: ['update:value', 'upload'],
   setup(props, { emit }) {
-    return () =>
-      h('div', { class: props.wide ? 'rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4' : 'rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4' }, [
+    return () => {
+      const previewSource = props.value || props.fallback
+
+      return h('div', { class: 'rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4' }, [
         h('p', { class: 'mb-3 text-sm font-black text-neutral-950' }, props.label),
         h('div', {
           class: [
@@ -1977,9 +2257,9 @@ const MediaInput = defineComponent({
             props.wide ? 'h-44' : 'h-32'
           ]
         }, [
-          props.value
+          previewSource
             ? h('img', {
-                src: props.value,
+                src: previewSource,
                 class: ['h-full w-full', props.preview === 'contain' ? 'object-contain p-3' : 'object-cover'],
                 alt: props.label
               })
@@ -2002,6 +2282,7 @@ const MediaInput = defineComponent({
           })
         ])
       ])
+    }
   }
 })
 

@@ -86,14 +86,6 @@
           </div>
 
           <div class="flex flex-wrap gap-2">
-            <NuxtLink
-              to="/facilities"
-              class="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-black text-neutral-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-            >
-              <Icon icon="solar:eye-bold-duotone" class="h-5 w-5" />
-              Halaman Publik
-            </NuxtLink>
-
             <button
               type="button"
               class="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-black text-neutral-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
@@ -118,7 +110,7 @@
       <section class="rounded-[1.75rem] border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
         <div class="grid gap-3 lg:grid-cols-[1fr_170px_160px_150px]">
           <div class="relative">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-neutral-400">
+            <div class="pointer-events-none absolute inset-y-0 right-4 flex items-center pl-4 text-neutral-400">
               <Icon icon="solar:magnifer-linear" class="h-5 w-5" />
             </div>
             <input
@@ -260,26 +252,9 @@
             </div>
           </div>
 
-          <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-3">
-            <NuxtLink
-              :to="facilityDetailTo(item.slug)"
-              target="_blank"
-              class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-blue-50 px-3 text-xs font-black text-blue-700 transition hover:bg-blue-600 hover:text-white"
-            >
-              <Icon icon="solar:eye-bold-duotone" class="h-4 w-4" />
-              Lihat
-            </NuxtLink>
-
+          <div class="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-neutral-100 pt-3">
             <div class="flex items-center gap-1.5">
-              <button
-                type="button"
-                class="grid h-9 w-9 place-items-center rounded-xl border border-neutral-200 bg-white text-neutral-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                title="Salin link"
-                @click="copyPublicLink(item)"
-              >
-                <Icon icon="solar:copy-bold-duotone" class="h-4 w-4" />
-              </button>
-
+      
               <button
                 type="button"
                 class="grid h-9 w-9 place-items-center rounded-xl border border-neutral-200 bg-white text-neutral-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
@@ -446,7 +421,7 @@
                     </Field>
                   </div>
 
-                  <aside class="space-y-4 rounded-[1.5rem] border border-neutral-200 bg-neutral-50/70 p-4">
+                  <aside class="space-y-4 rounded-3xl  border border-neutral-200 bg-neutral-50/70 p-4">
                     <Field label="Kategori">
                       <select v-model="form.facilityType" class="input-field bg-white">
                         <option v-for="type in facilityTypeOptions" :key="type.value" :value="type.value">

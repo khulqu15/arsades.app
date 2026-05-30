@@ -1,3 +1,5 @@
+<!-- /pages/news.vue -->
+
 <template>
   <main class="min-h-screen overflow-hidden bg-neutral-50 text-neutral-950">
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
