@@ -55,6 +55,7 @@ export default defineNuxtConfig({
         '/app/organizations',
         '/app/potentials',
         '/app/profile',
+        '/app/structure',
       ],
     }
   },

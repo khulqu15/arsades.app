@@ -1,6 +1,5 @@
 <template>
-  <section class="min-h-screen bg-neutral-50 text-neutral-950">
-    <!-- Toast -->
+  <section class="min-h-full bg-neutral-50 text-neutral-950" @click="closeEllipsisMenu">
     <Teleport to="body">
       <Transition
         enter-active-class="transition duration-300 ease-out"
@@ -10,26 +9,32 @@
         leave-from-class="translate-y-0 opacity-100 sm:translate-x-0"
         leave-to-class="translate-y-3 opacity-0 sm:translate-x-3 sm:translate-y-0"
       >
-        <div v-if="toast.show" class="fixed right-4 top-4 z-[9999] w-[calc(100%-2rem)] max-w-sm">
+        <div v-if="toast.show" class="fixed right-4 top-4 z-[10000] w-[calc(100%-2rem)] max-w-sm">
           <div
-            class="rounded-3xl border bg-white/95 p-4 shadow-[0_24px_90px_rgba(15,23,42,0.16)] backdrop-blur-xl"
-            :class="toast.type === 'success' ? 'border-blue-100' : 'border-red-200'"
+            class="rounded-3xl border bg-white/95 p-4 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur-xl"
+            :class="toast.type === 'success' ? 'border-emerald-200' : 'border-red-200'"
           >
             <div class="flex items-start gap-3">
               <div
-                class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl"
-                :class="toast.type === 'success' ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'"
+                class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl"
+                :class="toast.type === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'"
               >
-                <Icon :icon="toast.type === 'success' ? 'solar:check-circle-bold-duotone' : 'solar:danger-circle-bold-duotone'" class="h-6 w-6" />
+                <Icon
+                  :icon="toast.type === 'success' ? 'solar:check-circle-bold-duotone' : 'solar:danger-circle-bold-duotone'"
+                  class="h-5 w-5"
+                />
               </div>
+
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-black text-neutral-950">{{ toast.title }}</p>
                 <p class="mt-1 text-sm font-semibold leading-6 text-neutral-500">{{ toast.message }}</p>
               </div>
+
               <button
                 type="button"
                 class="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
-                @click="closeToast"
+                aria-label="Tutup pemberitahuan"
+                @click.stop="closeToast"
               >
                 <Icon icon="solar:close-circle-bold-duotone" class="h-5 w-5" />
               </button>
@@ -39,262 +44,357 @@
       </Transition>
     </Teleport>
 
-    <div class="mx-auto space-y-4 p-4 sm:p-6">
-      <!-- Compact Header -->
-      <section class="relative overflow-hidden rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
-        <div class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-blue-100 blur-3xl"></div>
-        <div class="pointer-events-none absolute -left-20 bottom-0 h-56 w-56 rounded-full bg-sky-50 blur-3xl"></div>
+    <div class="space-y-4 p-4 sm:p-6">
+      <section class="relative overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+        <div class="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-blue-100 blur-3xl"></div>
+        <div class="pointer-events-none absolute -left-28 bottom-0 h-48 w-48 rounded-full bg-sky-100 blur-3xl"></div>
 
         <div class="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3 sm:items-center">
-            <div class="grid h-14 w-14 shrink-0 place-items-center rounded-3xl border border-blue-100 bg-white p-2 shadow-sm">
+          <div class="flex min-w-0 items-start gap-3 sm:gap-4">
+            <div class="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-[1.35rem] border border-blue-100 bg-white p-2 shadow-sm ring-4 ring-blue-50 sm:h-16 sm:w-16">
               <img
                 v-if="appLogo"
                 :src="appLogo"
-                :alt="appName"
+                :alt="profile.name"
                 class="h-full w-full object-contain"
-                @error="logoFailed = true"
               >
-              <Icon v-else icon="solar:buildings-3-bold-duotone" class="h-7 w-7 text-blue-600" />
+              <div v-else class="grid h-full w-full place-items-center rounded-2xl bg-blue-600 text-white">
+                <Icon :icon="profile.icon" class="h-7 w-7" />
+              </div>
             </div>
 
             <div class="min-w-0">
-              <div class="mb-1.5 flex flex-wrap items-center gap-2">
+              <div class="mb-2 flex flex-wrap items-center gap-2">
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-blue-700">
                   <Icon icon="solar:users-group-rounded-bold-duotone" class="h-3.5 w-3.5" />
-                  Organisasi
+                  {{ profile.badge }}
                 </span>
+
                 <span class="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[11px] font-bold text-neutral-500">
                   {{ tenantSlug }}
                 </span>
               </div>
 
-              <h1 class="truncate text-2xl font-black tracking-tight text-neutral-950 sm:text-3xl">
-                Kelola Organisasi
+              <h1 class="text-2xl font-black tracking-tight text-neutral-950 sm:text-3xl">
+                {{ profile.title }}
               </h1>
-              <p class="mt-1 max-w-2xl text-sm font-medium leading-6 text-neutral-500">
-                Atur profil organisasi, konten publik, kontak, logo, dan tampilan detail dalam satu workspace yang ringan.
+
+              <p class="mt-1.5 max-w-3xl text-sm font-medium leading-6 text-neutral-500">
+                {{ profile.description }}
               </p>
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="flex flex-wrap gap-2">
             <button
               type="button"
-              class="inline-flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-black text-neutral-700 transition hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50"
-              @click="reloadOrganizations"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-black text-neutral-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="isLoading"
+              @click.stop="reloadOrganizations"
             >
-              <Icon icon="solar:refresh-bold-duotone" class="h-5 w-5" :class="pending ? 'animate-spin' : ''" />
+              <Icon icon="solar:refresh-bold-duotone" class="h-5 w-5" :class="isLoading ? 'animate-spin' : ''" />
               Refresh
             </button>
 
             <button
               type="button"
-              class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700"
-              @click="openCreate"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+              @click.stop="openCreateOrganizationModal"
             >
-              <Icon icon="solar:add-circle-bold-duotone" class="h-5 w-5" />
-              Tambah
+              <Icon icon="lucide:plus" class="h-5 w-5" />
+              Tambah Organisasi
             </button>
           </div>
         </div>
       </section>
 
-      <!-- Toolbar -->
-      <section class="rounded-[2rem] border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
-        <div class="grid gap-3 lg:grid-cols-[1fr_180px_160px_150px]">
-          <div class="relative">
-            <Icon icon="solar:magnifer-linear" class="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+      <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-400">Total Organisasi</p>
+              <p class="mt-2 text-2xl font-black text-neutral-950">{{ normalizedOrganizations.length }}</p>
+            </div>
+            <div class="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+              <Icon icon="solar:buildings-3-bold-duotone" class="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-400">Aktif</p>
+              <p class="mt-2 text-2xl font-black text-neutral-950">{{ activeCount }}</p>
+            </div>
+            <div class="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-600">
+              <Icon icon="solar:check-circle-bold-duotone" class="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-400">Nonaktif</p>
+              <p class="mt-2 text-2xl font-black text-neutral-950">{{ inactiveCount }}</p>
+            </div>
+            <div class="grid h-11 w-11 place-items-center rounded-2xl bg-amber-50 text-amber-600">
+              <Icon icon="solar:pause-circle-bold-duotone" class="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-400">Draft Lokal</p>
+              <p class="mt-2 text-2xl font-black text-neutral-950">{{ localDraftExists ? 'Ada' : '-' }}</p>
+            </div>
+            <div class="grid h-11 w-11 place-items-center rounded-2xl bg-purple-50 text-purple-600">
+              <Icon icon="solar:database-bold-duotone" class="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-3xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="relative min-w-0 flex-1">
+            <Icon icon="solar:magnifer-linear" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
             <input
-              v-model.trim="q"
+              v-model.trim="search"
               type="text"
-              placeholder="Cari nama, slug, kontak, atau deskripsi..."
-              class="field pl-12"
+              :placeholder="profile.searchPlaceholder"
+              class="h-12 w-full rounded-2xl border border-neutral-200 bg-neutral-50 pl-12 pr-4 text-sm font-bold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-600/10"
             >
           </div>
 
-          <select v-model="selectedType" class="field">
-            <option value="all">Semua tipe</option>
-            <option v-for="item in typeOptions" :key="item.value" :value="item.value">
-              {{ item.label }}
-            </option>
-          </select>
-
-          <select v-model="selectedStatus" class="field">
-            <option value="active">Aktif</option>
-            <option value="inactive">Nonaktif</option>
-            <option value="all">Semua status</option>
-          </select>
-
-          <select v-model="sort" class="field">
-            <option value="sort_order">Urutan</option>
-            <option value="name">Nama A-Z</option>
-            <option value="newest">Terbaru</option>
-            <option value="oldest">Terlama</option>
-          </select>
-        </div>
-
-        <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <p class="text-xs font-bold text-neutral-500">
-            {{ organizations.length }} data ditemukan
-          </p>
-
-          <div class="flex flex-wrap gap-2">
+          <div class="flex gap-2 overflow-x-auto pb-1 lg:max-w-xl">
             <button
+              v-for="option in typeFilterOptions"
+              :key="option.value"
               type="button"
-              class="inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black transition"
-              :class="featuredOnly ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50'"
-              @click="featuredOnly = !featuredOnly"
+              class="inline-flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black transition"
+              :class="selectedTypeFilter === option.value ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50'"
+              @click.stop="selectedTypeFilter = option.value"
             >
-              <Icon icon="solar:star-bold-duotone" class="h-4 w-4" />
-              Unggulan
-            </button>
-
-            <button
-              type="button"
-              class="inline-flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-600 transition hover:bg-neutral-50"
-              @click="resetFilters"
-            >
-              <Icon icon="solar:restart-bold-duotone" class="h-4 w-4" />
-              Reset
+              <Icon :icon="option.icon" class="h-4 w-4" />
+              {{ option.label }}
             </button>
           </div>
         </div>
       </section>
 
-      <div
-        v-if="visibleError"
-        class="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm font-bold leading-6 text-red-700"
-      >
+      <div class="flex gap-2 overflow-x-auto pb-1">
+        <button
+          v-for="option in statusFilterOptions"
+          :key="option.value"
+          type="button"
+          class="inline-flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black transition"
+          :class="selectedStatusFilter === option.value
+            ? 'bg-neutral-950 text-white shadow-lg shadow-neutral-950/15'
+            : 'border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50'"
+          @click.stop="selectedStatusFilter = option.value"
+        >
+          <Icon :icon="option.icon" class="h-4 w-4" />
+          {{ option.label }}
+          <span
+            class="rounded-full px-2 py-0.5 text-[10px] font-black"
+            :class="selectedStatusFilter === option.value ? 'bg-white/15 text-white' : 'bg-neutral-100 text-neutral-500'"
+          >
+            {{ option.count }}
+          </span>
+        </button>
+      </div>
+
+      <div v-if="visibleError" class="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm font-bold leading-6 text-red-700">
         {{ visibleError }}
       </div>
 
-      <!-- Loading -->
-      <section v-if="pending" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <div
-          v-for="item in 6"
-          :key="item"
-          class="h-56 animate-pulse rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-sm"
-        >
-          <div class="flex gap-3">
-            <div class="h-16 w-16 rounded-3xl bg-neutral-100"></div>
-            <div class="flex-1">
-              <div class="h-5 w-2/3 rounded-full bg-neutral-100"></div>
-              <div class="mt-3 h-3 w-full rounded-full bg-neutral-100"></div>
-              <div class="mt-2 h-3 w-4/5 rounded-full bg-neutral-100"></div>
-            </div>
-          </div>
-          <div class="mt-6 h-24 rounded-3xl bg-neutral-100"></div>
+      <section v-if="isLoading" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div v-for="item in 6" :key="item" class="h-80 animate-pulse rounded-[1.75rem] border border-neutral-200 bg-white p-3">
+          <div class="h-40 rounded-[1.35rem] bg-neutral-100"></div>
+          <div class="mt-4 h-4 w-2/3 rounded-full bg-neutral-100"></div>
+          <div class="mt-3 h-3 w-full rounded-full bg-neutral-100"></div>
+          <div class="mt-2 h-3 w-4/5 rounded-full bg-neutral-100"></div>
         </div>
       </section>
 
-      <!-- Empty -->
-      <section
-        v-else-if="organizations.length === 0"
-        class="rounded-[2rem] border border-dashed border-neutral-300 bg-white p-10 text-center shadow-sm"
-      >
-        <div class="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-blue-50 text-blue-600">
-          <Icon icon="solar:users-group-rounded-bold-duotone" class="h-8 w-8" />
+      <section v-else-if="filteredOrganizations.length === 0" class="rounded-[1.75rem] border border-dashed border-neutral-300 bg-white p-8 text-center shadow-sm">
+        <div class="mx-auto grid h-14 w-14 place-items-center rounded-3xl bg-blue-50 text-blue-600">
+          <Icon icon="solar:users-group-rounded-bold-duotone" class="h-7 w-7" />
         </div>
+
         <h2 class="mt-4 text-xl font-black text-neutral-950">Belum ada organisasi</h2>
         <p class="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-neutral-500">
-          Tambahkan organisasi pertama agar tampil pada halaman public.
+          {{ profile.emptyDescription }}
         </p>
+
         <button
           type="button"
-          class="mt-5 inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
-          @click="openCreate"
+          class="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+          @click.stop="openCreateOrganizationModal"
         >
-          <Icon icon="solar:add-circle-bold-duotone" class="h-5 w-5" />
-          Tambah Organisasi
+          <Icon icon="lucide:plus" class="h-5 w-5" />
+          Tambah
         </button>
       </section>
 
-      <!-- List -->
       <section v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <article
-          v-for="item in organizations"
+          v-for="item in pagedOrganizations"
           :key="item.id"
-          class="group overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5"
+          class="group relative overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5"
         >
-          <div class="relative h-28 overflow-hidden bg-neutral-100">
+          <div class="relative h-44 overflow-hidden bg-neutral-100">
             <img
-              v-if="getOrganizationCover(item) && !failedImages[item.id]"
-              :src="getOrganizationCover(item)"
-              :alt="item.displayName || item.name || 'Organisasi'"
+              v-if="organizationCover(item) && !failedCovers[item.id]"
+              :src="organizationCover(item)"
+              :alt="organizationTitle(item)"
               class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-              @error="markImageFailed(item.id)"
+              loading="lazy"
+              @error="markCoverFailed(item.id)"
             >
-            <div
-              v-else
-              class="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 via-white to-sky-50 text-blue-600"
-            >
-              <Icon :icon="getOrganizationIcon(item)" class="h-12 w-12" />
+
+            <div v-else class="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 via-white to-sky-50 text-blue-600">
+              <Icon :icon="organizationIcon(item)" class="h-10 w-10" />
             </div>
-            <div class="absolute inset-0 bg-gradient-to-t from-neutral-950/50 via-neutral-950/10 to-transparent"></div>
+
+            <div class="absolute inset-0 bg-gradient-to-t from-neutral-950/60 via-neutral-950/10 to-transparent"></div>
 
             <div class="absolute left-3 top-3 flex flex-wrap gap-2">
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-black text-neutral-800 backdrop-blur">
-                <Icon :icon="getOrganizationIcon(item)" class="h-3.5 w-3.5 text-blue-600" />
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-[11px] font-black text-neutral-900 shadow-sm backdrop-blur">
+                <Icon :icon="organizationIcon(item)" class="h-3.5 w-3.5 text-blue-600" />
                 {{ organizationTypeLabel(item.organizationType) }}
               </span>
-              <span
-                v-if="item.isFeatured"
-                class="rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-black text-white shadow-lg shadow-blue-900/20"
-              >
-                Unggulan
+
+              <span class="rounded-full px-3 py-1 text-[11px] font-black shadow-sm backdrop-blur" :class="statusClass(item.status)">
+                {{ statusLabel(item.status) }}
               </span>
             </div>
+
+            <button
+              type="button"
+              class="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-2xl border border-white/70 bg-white/95 text-neutral-700 shadow-lg shadow-neutral-950/10 backdrop-blur transition hover:bg-neutral-950 hover:text-white"
+              aria-label="Buka menu organisasi"
+              @click.stop="openEllipsisMenu(item, $event)"
+            >
+              <Icon icon="lucide:ellipsis" class="h-5 w-5" />
+            </button>
           </div>
 
           <div class="p-4">
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <p class="truncate text-[11px] font-black uppercase tracking-[0.14em] text-blue-600">
+                {{ item.slug || tenantSlug }}
+              </p>
+              <p class="shrink-0 text-[11px] font-bold text-neutral-400">{{ item.isFeatured ? 'Unggulan' : 'Reguler' }}</p>
+            </div>
+
             <div class="flex items-start gap-3">
               <div class="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl border border-blue-100 bg-white p-1.5 shadow-sm">
                 <img
                   v-if="item.logoUrl && !failedLogos[item.id]"
                   :src="item.logoUrl"
-                  :alt="item.displayName || item.name || 'Logo'"
+                  :alt="organizationTitle(item)"
                   class="h-full w-full object-contain"
+                  loading="lazy"
                   @error="markLogoFailed(item.id)"
                 >
-                <Icon v-else :icon="getOrganizationIcon(item)" class="h-6 w-6 text-blue-600" />
+                <Icon v-else :icon="organizationIcon(item)" class="h-6 w-6 text-blue-600" />
               </div>
 
               <div class="min-w-0 flex-1">
-                <h2 class="line-clamp-1 text-base font-black text-neutral-950">
-                  {{ item.displayName || item.name }}
-                </h2>
-                <p class="mt-1 line-clamp-2 text-sm font-medium leading-6 text-neutral-500">
-                  {{ item.shortDescription || plainDescription(item).slice(0, 120) || 'Informasi organisasi belum ditambahkan.' }}
+                <h3 class="line-clamp-2 text-base font-black leading-6 text-neutral-950 group-hover:text-blue-700">
+                  {{ organizationTitle(item) }}
+                </h3>
+
+                <p class="mt-2 line-clamp-3 text-sm font-medium leading-6 text-neutral-500">
+                  {{ item.shortDescription || plainDescription(item).slice(0, 130) || 'Informasi organisasi belum ditambahkan.' }}
                 </p>
               </div>
-            </div>
-
-            <div class="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-4">
-              <button
-                type="button"
-                class="inline-flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2.5 text-xs font-black text-neutral-700 transition hover:bg-neutral-50"
-                @click="openEdit(item)"
-              >
-                <Icon icon="solar:pen-bold-duotone" class="h-4 w-4" />
-                Edit
-              </button>
-
-              <button
-                type="button"
-                class="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-2.5 text-xs font-black text-red-700 transition hover:bg-red-100"
-                @click="openDelete(item)"
-              >
-                <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" />
-                Hapus
-              </button>
             </div>
           </div>
         </article>
       </section>
+
+      <div v-if="hasMore && !isLoading" class="flex justify-center">
+        <button
+          type="button"
+          class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-5 text-sm font-black text-neutral-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+          @click.stop="viewPage += 1"
+        >
+          <Icon icon="solar:alt-arrow-down-bold-duotone" class="h-5 w-5" />
+          Muat Lainnya
+        </button>
+      </div>
     </div>
 
-    <!-- Create / Edit Modal -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-150 ease-out"
+        enter-from-class="translate-y-1 scale-95 opacity-0"
+        enter-to-class="translate-y-0 scale-100 opacity-100"
+        leave-active-class="transition duration-100 ease-in"
+        leave-from-class="translate-y-0 scale-100 opacity-100"
+        leave-to-class="translate-y-1 scale-95 opacity-0"
+      >
+        <div
+          v-if="activeMenuOrganization"
+          class="fixed z-[9999] w-56 overflow-hidden rounded-3xl border border-neutral-200 bg-white p-2 shadow-[0_24px_90px_rgba(15,23,42,0.22)]"
+          :style="{ top: `${ellipsisMenuPosition.top}px`, left: `${ellipsisMenuPosition.left}px` }"
+          @click.stop
+        >
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-black text-neutral-700 transition hover:bg-blue-50 hover:text-blue-700"
+            @click="openView(activeMenuOrganization)"
+          >
+            <Icon icon="solar:eye-bold-duotone" class="h-5 w-5 text-blue-600" />
+            Lihat
+          </button>
+
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-black text-neutral-700 transition disabled:cursor-not-allowed disabled:opacity-50"
+            :class="activeMenuOrganization.status === 'inactive'
+              ? 'hover:bg-emerald-50 hover:text-emerald-700'
+              : 'hover:bg-amber-50 hover:text-amber-700'"
+            :disabled="isMutating"
+            @click="toggleOrganizationStatus(activeMenuOrganization)"
+          >
+            <Icon
+              :icon="activeMenuOrganization.status === 'inactive' ? 'solar:check-circle-bold-duotone' : 'solar:pause-circle-bold-duotone'"
+              class="h-5 w-5"
+              :class="activeMenuOrganization.status === 'inactive' ? 'text-emerald-600' : 'text-amber-600'"
+            />
+            {{ activeMenuOrganization.status === 'inactive' ? 'Aktifkan' : 'Nonaktifkan' }}
+          </button>
+
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-black text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950"
+            @click="openEditOrganizationModal(activeMenuOrganization)"
+          >
+            <Icon icon="solar:pen-2-bold-duotone" class="h-5 w-5 text-neutral-600" />
+            Edit
+          </button>
+
+          <div class="my-1 border-t border-neutral-100"></div>
+
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-black text-red-600 transition hover:bg-red-50"
+            @click="openDelete(activeMenuOrganization)"
+          >
+            <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-5 w-5" />
+            Delete
+          </button>
+        </div>
+      </Transition>
+    </Teleport>
+
     <Teleport to="body">
       <Transition
         enter-active-class="transition duration-200 ease-out"
@@ -305,660 +405,382 @@
         leave-to-class="opacity-0"
       >
         <div
-          v-if="showForm"
-          class="fixed inset-0 z-[9990] flex items-center justify-center bg-neutral-950/50 p-3 backdrop-blur-sm sm:p-4"
+          v-if="organizationModalOpen"
+          class="fixed inset-0 z-[120] grid place-items-center bg-neutral-950/60 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          @click.self="closeOrganizationModal"
         >
-          <div class="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-2xl">
-            <header class="border-b border-neutral-200 bg-white px-4 py-4 sm:px-5">
+          <section class="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-[0_32px_110px_rgba(15,23,42,0.28)]">
+            <div class="border-b border-neutral-200 bg-gradient-to-br from-blue-50 via-white to-white p-5">
               <div class="flex items-start justify-between gap-4">
-                <div class="flex min-w-0 items-start gap-3">
-                  <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
-                    <Icon :icon="formMode === 'create' ? 'solar:add-circle-bold-duotone' : 'solar:pen-bold-duotone'" class="h-6 w-6" />
-                  </div>
-                  <div class="min-w-0">
-                    <p class="text-xs font-black uppercase tracking-[0.14em] text-blue-600">
-                      {{ formMode === 'create' ? 'Data Baru' : 'Ubah Data' }}
-                    </p>
-                    <h2 class="truncate text-xl font-black text-neutral-950">
-                      {{ formMode === 'create' ? 'Tambah Organisasi' : form.displayName || form.name || 'Edit Organisasi' }}
-                    </h2>
-                    <p class="mt-1 text-sm font-medium text-neutral-500">
-                      Isi bertahap agar data public tampil rapi dan mudah dipahami.
-                    </p>
-                  </div>
+                <div>
+                  <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Organisasi</p>
+                  <h2 class="mt-1 text-2xl font-black tracking-tight text-neutral-950">
+                    {{ editingOrganization ? 'Edit Organisasi' : 'Tambah Organisasi' }}
+                  </h2>
+                  <p class="mt-1 text-sm font-semibold leading-6 text-neutral-500">
+                    Form dibuat seragam seperti berita: slug otomatis, status default aktif, draft lokal, media upload/link, dan editor reusable.
+                  </p>
                 </div>
 
                 <button
                   type="button"
-                  class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950"
-                  @click="requestCloseForm"
+                  class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-neutral-200 bg-white text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-950"
+                  aria-label="Tutup modal organisasi"
+                  @click="closeOrganizationModal"
                 >
-                  <Icon icon="solar:close-circle-bold-duotone" class="h-6 w-6" />
+                  <Icon icon="lucide:x" class="h-5 w-5" />
                 </button>
               </div>
 
-              <div class="mt-4 grid gap-2 sm:grid-cols-4">
+              <div class="mt-6 grid gap-3 lg:grid-cols-3">
                 <button
                   v-for="step in formSteps"
                   :key="step.value"
                   type="button"
-                  class="flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition"
+                  class="flex items-center gap-3 rounded-2xl border p-3 text-left transition"
                   :class="formStep === step.value
-                    ? 'border-blue-200 bg-blue-50 text-blue-700 ring-4 ring-blue-50'
+                    ? 'border-blue-200 bg-blue-600 text-white shadow-lg shadow-blue-600/20'
                     : formStep > step.value
-                      ? 'border-blue-100 bg-white text-blue-700'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                       : 'border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50'"
-                  @click="goToStep(step.value)"
+                  @click="goToFormStep(step.value)"
                 >
                   <span
-                    class="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-xs font-black"
+                    class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl"
                     :class="formStep === step.value
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-white/15 text-white'
                       : formStep > step.value
-                        ? 'bg-blue-50 text-blue-700'
+                        ? 'bg-emerald-600 text-white'
                         : 'bg-neutral-100 text-neutral-500'"
                   >
-                    {{ step.value }}
+                    <Icon :icon="formStep > step.value ? 'solar:check-circle-bold-duotone' : step.icon" class="h-5 w-5" />
                   </span>
+
                   <span class="min-w-0">
                     <span class="block truncate text-sm font-black">{{ step.title }}</span>
-                    <span class="block truncate text-[11px] font-semibold opacity-70">{{ step.subtitle }}</span>
+                    <span
+                      class="mt-0.5 block truncate text-xs font-semibold"
+                      :class="formStep === step.value ? 'text-white/65' : 'text-current/60'"
+                    >
+                      {{ step.description }}
+                    </span>
                   </span>
                 </button>
               </div>
-            </header>
+            </div>
 
-            <div class="flex-1 overflow-y-auto bg-neutral-50 p-4 sm:p-5">
+            <form
+              class="min-h-0 flex-1 overflow-y-auto p-5"
+              @submit.prevent="submitOrganizationForm"
+              @keyup.capture="handleDraftKeyup"
+              @input.capture="queueOrganizationDraftSave"
+              @change.capture="queueOrganizationDraftSave"
+            >
+              <div
+                v-if="draftLoaded"
+                class="mb-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold leading-6 text-amber-700"
+              >
+                <Icon icon="solar:info-circle-bold-duotone" class="mt-0.5 h-5 w-5 shrink-0" />
+                <span>Draft lokal terakhir berhasil dimuat otomatis.</span>
+              </div>
+
               <div
                 v-if="formError"
-                class="mb-4 rounded-3xl border border-red-200 bg-red-50 p-4 text-sm font-bold leading-6 text-red-700"
+                class="mb-4 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold leading-6 text-red-700"
               >
-                {{ formError }}
+                <Icon icon="solar:danger-circle-bold-duotone" class="mt-0.5 h-5 w-5 shrink-0" />
+                <span>{{ formError }}</span>
               </div>
 
-              <!-- Step 1 -->
-              <div v-if="formStep === 1" class="grid gap-4 lg:grid-cols-[1fr_320px]">
-                <section class="rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-sm">
-                  <div class="mb-4">
-                    <h3 class="text-lg font-black text-neutral-950">Identitas Organisasi</h3>
-                    <p class="mt-1 text-sm font-medium text-neutral-500">Nama, tipe, slug, dan ringkasan singkat.</p>
+              <div v-show="formStep === 1" class="space-y-4">
+                <div class="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">
+                  <div class="flex items-start gap-3">
+                    <div class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-blue-600 shadow-sm">
+                      <Icon icon="solar:buildings-3-bold-duotone" class="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 class="text-base font-black text-neutral-950">Informasi Utama</h3>
+                      <p class="mt-1 text-sm font-medium leading-6 text-neutral-500">Isi nama, tipe organisasi, dan ringkasan. Slug dibuat otomatis saat disimpan.</p>
+                    </div>
                   </div>
+                </div>
 
-                  <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label class="label">Nama organisasi</label>
-                      <input
-                        v-model.trim="form.name"
-                        type="text"
-                        class="field"
-                        placeholder="Contoh: Karang Taruna Martopuro"
-                        @input="syncSlugFromName"
-                      >
+                <div class="grid gap-4 md:grid-cols-2">
+                  <label class="block">
+                    <span class="mb-2 block text-sm font-black text-neutral-800">Nama Organisasi</span>
+                    <input
+                      v-model="organizationForm.name"
+                      type="text"
+                      class="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10"
+                      placeholder="Contoh: Karang Taruna Martopuro"
+                      required
+                    >
+                  </label>
+
+                  <label class="block">
+                    <span class="mb-2 block text-sm font-black text-neutral-800">Nama Tampilan</span>
+                    <input
+                      v-model="organizationForm.displayName"
+                      type="text"
+                      class="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10"
+                      placeholder="Nama yang tampil di website"
+                    >
+                  </label>
+
+                  <label class="block">
+                    <span class="mb-2 block text-sm font-black text-neutral-800">Tipe Organisasi</span>
+                    <select
+                      v-model="organizationForm.organizationType"
+                      class="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10"
+                    >
+                      <option v-for="item in typeOptions" :key="item.value" :value="item.value">
+                        {{ item.label }}
+                      </option>
+                    </select>
+                  </label>
+
+                  <label class="block">
+                    <span class="mb-2 block text-sm font-black text-neutral-800">Urutan Tampil</span>
+                    <input
+                      v-model.number="organizationForm.sortOrder"
+                      type="number"
+                      class="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10"
+                      placeholder="0"
+                    >
+                  </label>
+
+                  <label class="block md:col-span-2">
+                    <span class="mb-2 block text-sm font-black text-neutral-800">Ringkasan Singkat</span>
+                    <textarea
+                      v-model="organizationForm.shortDescription"
+                      rows="4"
+                      class="w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold leading-7 text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10"
+                      placeholder="Tulis ringkasan pendek yang mudah dipahami warga."
+                    ></textarea>
+                  </label>
+
+                  <button
+                    type="button"
+                    class="md:col-span-2 flex items-center justify-between rounded-2xl border border-neutral-200 bg-white p-4 text-left transition hover:border-blue-200 hover:bg-blue-50"
+                    @click.stop="organizationForm.isFeatured = !organizationForm.isFeatured"
+                  >
+                    <span>
+                      <span class="block text-sm font-black text-neutral-950">Tampilkan sebagai unggulan</span>
+                      <span class="block text-xs font-semibold leading-5 text-neutral-500">Data unggulan dapat ditonjolkan pada halaman publik.</span>
+                    </span>
+                    <span
+                      class="relative h-7 w-12 rounded-full transition"
+                      :class="organizationForm.isFeatured ? 'bg-blue-600' : 'bg-neutral-200'"
+                    >
+                      <span
+                        class="absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition"
+                        :class="organizationForm.isFeatured ? 'left-6' : 'left-1'"
+                      ></span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div v-show="formStep === 2" class="space-y-4">
+                <div class="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">
+                  <div class="flex items-start gap-3">
+                    <div class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-blue-600 shadow-sm">
+                      <Icon icon="solar:gallery-wide-bold-duotone" class="h-5 w-5" />
                     </div>
-
                     <div>
-                      <label class="label">Nama tampilan</label>
-                      <input
-                        v-model.trim="form.displayName"
-                        type="text"
-                        class="field"
-                        placeholder="Nama yang tampil di website"
-                      >
+                      <h3 class="text-base font-black text-neutral-950">Media Organisasi</h3>
+                      <p class="mt-1 text-sm font-medium leading-6 text-neutral-500">Upload ke Cloudinary atau gunakan link. Preview cukup gambar saja.</p>
                     </div>
+                  </div>
+                </div>
 
-                    <div>
-                      <label class="label">Link halaman</label>
-                      <div class="flex rounded-2xl border border-neutral-200 bg-neutral-50 focus-within:border-blue-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100">
-                        <span class="hidden items-center border-r border-neutral-200 px-3 text-xs font-black text-neutral-400 sm:inline-flex">
-                          /organizations?detail=
-                        </span>
-                        <input
-                          v-model.trim="form.slug"
-                          type="text"
-                          class="w-full rounded-2xl bg-transparent px-4 py-3 text-sm font-bold text-neutral-800 outline-none"
-                          placeholder="karang-taruna"
-                          @input="manualSlugEdited = true"
-                        >
+                <div class="grid gap-4 lg:grid-cols-2">
+                  <section class="space-y-3 rounded-[1.5rem] border border-neutral-200 bg-white p-4">
+                    <div class="flex items-center justify-between gap-3">
+                      <div>
+                        <h4 class="text-sm font-black text-neutral-950">Logo</h4>
+                        <p class="mt-1 text-xs font-semibold text-neutral-400">Logo kecil untuk identitas organisasi.</p>
+                      </div>
+                      <div class="flex rounded-2xl bg-neutral-50 p-1">
+                        <button type="button" class="rounded-xl px-3 py-2 text-xs font-black transition" :class="logoInputMode === 'upload' ? 'bg-blue-600 text-white' : 'text-neutral-600 hover:bg-neutral-100'" @click.stop="setLogoInputMode('upload')">File</button>
+                        <button type="button" class="rounded-xl px-3 py-2 text-xs font-black transition" :class="logoInputMode === 'link' ? 'bg-blue-600 text-white' : 'text-neutral-600 hover:bg-neutral-100'" @click.stop="setLogoInputMode('link')">Link</button>
                       </div>
                     </div>
 
-                    <div>
-                      <label class="label">Tipe organisasi</label>
-                      <select v-model="form.organizationType" class="field" @change="syncIconFromType">
-                        <option v-for="item in typeOptions" :key="item.value" :value="item.value">
-                          {{ item.label }}
-                        </option>
-                      </select>
-                    </div>
-
-                    <div class="sm:col-span-2">
-                      <label class="label">Ringkasan singkat</label>
-                      <textarea
-                        v-model.trim="form.shortDescription"
-                        rows="4"
-                        class="textarea-field"
-                        placeholder="Tulis ringkasan pendek yang mudah dipahami warga..."
-                      ></textarea>
-                    </div>
-                  </div>
-                </section>
-
-                <aside class="space-y-4">
-                  <section class="rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-sm">
-                    <h3 class="text-sm font-black text-neutral-950">Ikon</h3>
-                    <p class="mt-1 text-xs font-semibold leading-5 text-neutral-500">Pilih visual kecil untuk membedakan organisasi.</p>
+                    <input ref="logoInputRef" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" @change="onPickLogoFile">
 
                     <button
+                      v-if="logoInputMode === 'upload'"
                       type="button"
-                      class="mt-4 flex w-full items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3 text-left transition hover:border-blue-200 hover:bg-blue-50"
-                      @click="showIconPicker = true"
+                      class="flex w-full items-center justify-center gap-3 rounded-[1.5rem] border-2 border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-blue-700 transition hover:border-blue-400 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      :disabled="mediaUploadDisabled"
+                      @click.stop="pickLogoFile"
                     >
-                      <div class="grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-600">
-                        <Icon :icon="form.icon || defaultIconByType(form.organizationType)" class="h-6 w-6" />
-                      </div>
-                      <div class="min-w-0">
-                        <p class="text-sm font-black text-neutral-950">Ganti ikon</p>
-                        <p class="truncate text-xs font-semibold text-neutral-500">{{ form.icon }}</p>
-                      </div>
+                      <Icon icon="solar:cloud-upload-bold-duotone" class="h-7 w-7 shrink-0" />
+                      <span class="min-w-0 truncate text-sm font-black">{{ logoFile ? logoFile.name : 'Pilih file logo' }}</span>
                     </button>
-                  </section>
 
-                  <section class="rounded-[2rem] border border-blue-100 bg-blue-50 p-4">
-                    <p class="text-sm font-black text-blue-900">Link public</p>
-                    <p class="mt-2 break-all rounded-2xl bg-white px-3 py-3 text-xs font-bold leading-5 text-blue-700">
-                      {{ formPublicUrl }}
-                    </p>
-                  </section>
-                </aside>
-              </div>
-
-              <!-- Step 2 -->
-              <div v-if="formStep === 2" class="grid gap-4 lg:grid-cols-[320px_1fr]">
-                <aside class="space-y-4">
-                  <section class="rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-sm">
-                    <h3 class="text-lg font-black text-neutral-950">Logo & Gambar</h3>
-                    <p class="mt-1 text-sm font-medium leading-6 text-neutral-500">Gunakan gambar yang jelas agar tampilan public terlihat profesional.</p>
-
-                    <div class="mt-4 space-y-4">
-                      <div>
-                        <label class="label">Logo organisasi</label>
-                        <div class="flex items-center gap-3">
-                          <div class="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-3xl border border-neutral-200 bg-neutral-50 p-2">
-                            <img v-if="form.logoUrl" :src="form.logoUrl" alt="Logo" class="h-full w-full object-contain">
-                            <Icon v-else :icon="form.icon || defaultIconByType(form.organizationType)" class="h-7 w-7 text-blue-600" />
-                          </div>
-                          <div class="flex min-w-0 flex-1 flex-col gap-2">
-                            <button type="button" class="btn-secondary w-full" :disabled="imageUploading" @click="logoInput?.click()">
-                              <Icon icon="solar:upload-bold-duotone" class="h-4 w-4" />
-                              Unggah
-                            </button>
-                            <input ref="logoInput" type="file" accept="image/*" class="hidden" @change="onPickLogo">
-                          </div>
-                        </div>
-                        <input v-model.trim="form.logoUrl" type="url" class="field mt-3" placeholder="Atau tempel link gambar logo">
-                      </div>
-
-                      <div>
-                        <label class="label">Gambar utama</label>
-                        <div class="overflow-hidden rounded-3xl border border-neutral-200 bg-neutral-50">
-                          <img
-                            v-if="form.coverUrl"
-                            :src="form.coverUrl"
-                            alt="Gambar utama"
-                            class="h-36 w-full object-cover"
-                          >
-                          <div v-else class="grid h-36 place-items-center text-blue-600">
-                            <Icon icon="solar:gallery-wide-bold-duotone" class="h-10 w-10" />
-                          </div>
-                        </div>
-                        <div class="mt-3 grid grid-cols-2 gap-2">
-                          <button type="button" class="btn-secondary" :disabled="imageUploading" @click="coverInput?.click()">
-                            <Icon icon="solar:upload-bold-duotone" class="h-4 w-4" />
-                            Unggah
-                          </button>
-                          <button type="button" class="btn-secondary" @click="form.coverUrl = ''">
-                            <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" />
-                            Hapus
-                          </button>
-                          <input ref="coverInput" type="file" accept="image/*" class="hidden" @change="onPickCover">
-                        </div>
-                        <input v-model.trim="form.coverUrl" type="url" class="field mt-3" placeholder="Atau tempel link gambar utama">
-                      </div>
-
-                      <div>
-                        <label class="label">Galeri</label>
-                        <div class="grid grid-cols-3 gap-2">
-                          <div
-                            v-for="(image, index) in form.images"
-                            :key="`${image}-${index}`"
-                            class="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50"
-                          >
-                            <img :src="image" alt="Galeri" class="h-20 w-full object-cover">
-                            <button
-                              type="button"
-                              class="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-white/90 text-red-600 opacity-0 shadow-sm transition group-hover:opacity-100"
-                              @click="removeGalleryImage(index)"
-                            >
-                              <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" />
-                            </button>
-                          </div>
-
-                          <button
-                            type="button"
-                            class="grid h-20 place-items-center rounded-2xl border border-dashed border-blue-200 bg-blue-50 text-blue-600 transition hover:bg-blue-100"
-                            :disabled="imageUploading"
-                            @click="galleryInput?.click()"
-                          >
-                            <Icon icon="solar:add-circle-bold-duotone" class="h-6 w-6" />
-                          </button>
-                        </div>
-                        <input ref="galleryInput" type="file" accept="image/*" multiple class="hidden" @change="onPickGallery">
-                        <div class="mt-3 flex gap-2">
-                          <input v-model.trim="galleryUrlDraft" type="url" class="field" placeholder="Tempel link gambar">
-                          <button type="button" class="btn-primary shrink-0" @click="addGalleryUrl">Tambah</button>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-                </aside>
-
-                <section class="rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-sm">
-                  <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                      <h3 class="text-lg font-black text-neutral-950">Konten Detail</h3>
-                      <p class="mt-1 text-sm font-medium text-neutral-500">Tulis informasi lengkap untuk halaman public.</p>
-                    </div>
-
-                    <div class="flex flex-wrap gap-2">
-                      <button type="button" class="editor-btn" :class="{ active: editor?.isActive('bold') }" @click="editor?.chain().focus().toggleBold().run()">
-                        <Icon icon="solar:text-bold-bold" class="h-4 w-4" />
-                        Bold
-                      </button>
-                      <button type="button" class="editor-btn" :class="{ active: editor?.isActive('italic') }" @click="editor?.chain().focus().toggleItalic().run()">
-                        <Icon icon="solar:text-italic-bold" class="h-4 w-4" />
-                        Italic
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white">
-                    <div class="flex flex-wrap items-center gap-1 border-b border-neutral-200 bg-neutral-50 p-2">
-                      <button type="button" class="toolbar-btn" :class="{ active: editor?.isActive('paragraph') }" @click="editor?.chain().focus().setParagraph().run()">P</button>
-                      <button type="button" class="toolbar-btn" :class="{ active: editor?.isActive('heading', { level: 1 }) }" @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()">H1</button>
-                      <button type="button" class="toolbar-btn" :class="{ active: editor?.isActive('heading', { level: 2 }) }" @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()">H2</button>
-                      <button type="button" class="toolbar-btn" :class="{ active: editor?.isActive('heading', { level: 3 }) }" @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()">H3</button>
-                      <span class="mx-1 h-6 w-px bg-neutral-200"></span>
-                      <button type="button" class="toolbar-btn" :class="{ active: editor?.isActive('bulletList') }" @click="editor?.chain().focus().toggleBulletList().run()">
-                        <Icon icon="solar:list-bold" class="h-4 w-4" />
-                      </button>
-                      <button type="button" class="toolbar-btn" :class="{ active: editor?.isActive('orderedList') }" @click="editor?.chain().focus().toggleOrderedList().run()">
-                        <Icon icon="solar:list-check-bold" class="h-4 w-4" />
-                      </button>
-                      <button type="button" class="toolbar-btn" :class="{ active: editor?.isActive('blockquote') }" @click="editor?.chain().focus().toggleBlockquote().run()">
-                        <Icon icon="solar:quote-down-bold" class="h-4 w-4" />
-                      </button>
-                      <span class="mx-1 h-6 w-px bg-neutral-200"></span>
-                      <button type="button" class="toolbar-btn" @click="openLinkModal">
-                        <Icon icon="solar:link-bold-duotone" class="h-4 w-4" />
-                        Link
-                      </button>
-                      <button type="button" class="toolbar-btn" @click="editorImageInput?.click()">
-                        <Icon icon="solar:gallery-add-bold-duotone" class="h-4 w-4" />
-                        Gambar
-                      </button>
-                      <button type="button" class="toolbar-btn" @click="openMediaModal('image-url')">
-                        <Icon icon="solar:link-circle-bold-duotone" class="h-4 w-4" />
-                        Gambar URL
-                      </button>
-                      <button type="button" class="toolbar-btn" @click="openMediaModal('youtube')">
-                        <Icon icon="solar:video-library-bold-duotone" class="h-4 w-4" />
-                        YouTube
-                      </button>
-                      <button type="button" class="toolbar-btn" @click="openMediaModal('pdf')">
-                        <Icon icon="solar:file-text-bold-duotone" class="h-4 w-4" />
-                        PDF
-                      </button>
-                      <button type="button" class="toolbar-btn" @click="openMediaModal('map')">
-                        <Icon icon="solar:map-point-bold-duotone" class="h-4 w-4" />
-                        Maps
-                      </button>
-                      <span class="mx-1 h-6 w-px bg-neutral-200"></span>
-                      <button type="button" class="toolbar-btn" @click="insertTable">
-                        <Icon icon="solar:widget-bold-duotone" class="h-4 w-4" />
-                        Tabel
-                      </button>
-                      <button v-if="editor?.isActive('table')" type="button" class="toolbar-btn" @click="editor?.chain().focus().addRowAfter().run()">+ Baris</button>
-                      <button v-if="editor?.isActive('table')" type="button" class="toolbar-btn" @click="editor?.chain().focus().addColumnAfter().run()">+ Kolom</button>
-                      <button v-if="editor?.isActive('table')" type="button" class="toolbar-btn text-red-600" @click="editor?.chain().focus().deleteTable().run()">Hapus Tabel</button>
-                    </div>
-
-                    <EditorContent :editor="editor" class="editor-surface" />
-                  </div>
-
-                  <input ref="editorImageInput" type="file" accept="image/*" class="hidden" @change="onPickEditorImage">
-                </section>
-              </div>
-
-              <!-- Step 3 -->
-              <div v-if="formStep === 3" class="grid gap-4 lg:grid-cols-2">
-                <section class="rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-sm">
-                  <h3 class="text-lg font-black text-neutral-950">Kontak & Alamat</h3>
-                  <p class="mt-1 text-sm font-medium text-neutral-500">Informasi yang membantu warga menghubungi organisasi.</p>
-
-                  <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label class="label">Telepon</label>
-                      <input v-model.trim="form.phone" type="text" class="field" placeholder="0343..." />
-                    </div>
-                    <div>
-                      <label class="label">WhatsApp</label>
-                      <input v-model.trim="form.whatsapp" type="text" class="field" placeholder="628..." />
-                    </div>
-                    <div>
-                      <label class="label">Email</label>
-                      <input v-model.trim="form.email" type="email" class="field" placeholder="nama@email.com" />
-                    </div>
-                    <div>
-                      <label class="label">Website</label>
-                      <input v-model.trim="form.websiteUrl" type="url" class="field" placeholder="https://..." />
-                    </div>
-                    <div class="sm:col-span-2">
-                      <label class="label">Alamat</label>
-                      <textarea v-model.trim="form.address" rows="4" class="textarea-field" placeholder="Tulis alamat organisasi..."></textarea>
-                    </div>
-                  </div>
-                </section>
-
-                <section class="rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-sm">
-                  <h3 class="text-lg font-black text-neutral-950">Kanal Sosial & Status</h3>
-                  <p class="mt-1 text-sm font-medium text-neutral-500">Tambahkan kanal yang aktif agar mudah dikunjungi.</p>
-
-                  <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label class="label">Instagram</label>
-                      <input v-model.trim="form.instagram" type="text" class="field" placeholder="@username atau https://..." />
-                    </div>
-                    <div>
-                      <label class="label">Facebook</label>
-                      <input v-model.trim="form.facebook" type="text" class="field" placeholder="username atau https://..." />
-                    </div>
-                    <div>
-                      <label class="label">YouTube</label>
-                      <input v-model.trim="form.youtube" type="text" class="field" placeholder="channel atau https://..." />
-                    </div>
-                    <div>
-                      <label class="label">TikTok</label>
-                      <input v-model.trim="form.tiktok" type="text" class="field" placeholder="@username atau https://..." />
-                    </div>
-                    <div>
-                      <label class="label">Status</label>
-                      <select v-model="form.status" class="field">
-                        <option value="active">Aktif</option>
-                        <option value="inactive">Nonaktif</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="label">Urutan tampil</label>
-                      <input v-model.number="form.sortOrder" type="number" class="field" placeholder="0" />
-                    </div>
-                    <div class="sm:col-span-2">
-                      <button
-                        type="button"
-                        class="flex w-full items-center justify-between rounded-2xl border border-neutral-200 bg-white p-4 text-left transition hover:border-blue-200 hover:bg-blue-50"
-                        @click="form.isFeatured = !form.isFeatured"
-                      >
-                        <span>
-                          <span class="block text-sm font-black text-neutral-950">Tampilkan sebagai unggulan</span>
-                          <span class="block text-xs font-semibold text-neutral-500">Data unggulan dapat tampil di hero atau section public.</span>
-                        </span>
-                        <span
-                          class="relative h-7 w-12 rounded-full transition"
-                          :class="form.isFeatured ? 'bg-blue-600' : 'bg-neutral-200'"
-                        >
-                          <span
-                            class="absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition"
-                            :class="form.isFeatured ? 'left-6' : 'left-1'"
-                          ></span>
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </section>
-              </div>
-
-              <!-- Step 4 -->
-              <div v-if="formStep === 4" class="grid gap-4 lg:grid-cols-[1fr_320px]">
-                <section class="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
-                  <div class="relative h-56 bg-neutral-100">
-                    <img
-                      v-if="form.coverUrl"
-                      :src="form.coverUrl"
-                      alt="Preview"
-                      class="h-full w-full object-cover"
+                    <input
+                      v-else
+                      v-model="organizationForm.logoUrl"
+                      type="url"
+                      class="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10"
+                      placeholder="https://domain.com/logo.png"
+                      @input="clearLogoFile(false)"
                     >
-                    <div v-else class="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 via-white to-sky-50 text-blue-600">
-                      <Icon icon="solar:gallery-wide-bold-duotone" class="h-14 w-14" />
-                    </div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-neutral-950/65 via-neutral-950/20 to-transparent"></div>
-                    <div class="absolute bottom-5 left-5 right-5">
-                      <div class="mb-3 grid h-14 w-14 place-items-center overflow-hidden rounded-2xl border border-white/20 bg-white/15 p-2 backdrop-blur">
-                        <img v-if="form.logoUrl" :src="form.logoUrl" alt="Logo" class="h-full w-full object-contain">
-                        <Icon v-else :icon="form.icon || defaultIconByType(form.organizationType)" class="h-7 w-7 text-white" />
+
+                    <div class="overflow-hidden rounded-[1.2rem] border border-neutral-200 bg-neutral-50">
+                      <img v-if="logoPreview" :src="logoPreview" alt="Preview logo" class="h-40 w-full object-contain p-5">
+                      <div v-else class="grid h-40 place-items-center text-blue-600">
+                        <Icon icon="solar:gallery-wide-bold-duotone" class="h-10 w-10" />
                       </div>
-                      <h3 class="line-clamp-2 text-2xl font-black tracking-tight text-white">{{ form.displayName || form.name || 'Nama Organisasi' }}</h3>
-                      <p class="mt-2 line-clamp-2 max-w-2xl text-sm font-medium leading-6 text-white/80">
-                        {{ form.shortDescription || 'Ringkasan organisasi akan tampil di sini.' }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div class="p-5">
-                    <div class="prose prose-neutral max-w-none" v-html="reviewHtml"></div>
-                  </div>
-                </section>
-
-                <aside class="space-y-4">
-                  <section class="rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-sm">
-                    <h3 class="text-sm font-black text-neutral-950">Ringkasan</h3>
-                    <div class="mt-4 space-y-3">
-                      <ReviewRow label="Nama" :value="form.displayName || form.name || '-'" />
-                      <ReviewRow label="Tipe" :value="organizationTypeLabel(form.organizationType)" />
-                      <ReviewRow label="Status" :value="form.status === 'active' ? 'Aktif' : 'Nonaktif'" />
-                      <ReviewRow label="Public" :value="formPublicUrl" />
                     </div>
                   </section>
 
-                  <section class="rounded-[2rem] border border-blue-100 bg-blue-50 p-4">
-                    <p class="text-sm font-black text-blue-900">Siap disimpan?</p>
-                    <p class="mt-2 text-sm font-semibold leading-6 text-blue-700">
-                      Pastikan judul, ringkasan, gambar, dan kontak sudah sesuai sebelum dipublikasikan.
-                    </p>
+                  <section class="space-y-3 rounded-[1.5rem] border border-neutral-200 bg-white p-4">
+                    <div class="flex items-center justify-between gap-3">
+                      <div>
+                        <h4 class="text-sm font-black text-neutral-950">Gambar Utama</h4>
+                        <p class="mt-1 text-xs font-semibold text-neutral-400">Cover untuk kartu organisasi.</p>
+                      </div>
+                      <div class="flex rounded-2xl bg-neutral-50 p-1">
+                        <button type="button" class="rounded-xl px-3 py-2 text-xs font-black transition" :class="coverInputMode === 'upload' ? 'bg-blue-600 text-white' : 'text-neutral-600 hover:bg-neutral-100'" @click.stop="setCoverInputMode('upload')">File</button>
+                        <button type="button" class="rounded-xl px-3 py-2 text-xs font-black transition" :class="coverInputMode === 'link' ? 'bg-blue-600 text-white' : 'text-neutral-600 hover:bg-neutral-100'" @click.stop="setCoverInputMode('link')">Link</button>
+                      </div>
+                    </div>
+
+                    <input ref="coverInputRef" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" @change="onPickCoverFile">
+
+                    <button
+                      v-if="coverInputMode === 'upload'"
+                      type="button"
+                      class="flex w-full items-center justify-center gap-3 rounded-[1.5rem] border-2 border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-blue-700 transition hover:border-blue-400 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      :disabled="mediaUploadDisabled"
+                      @click.stop="pickCoverFile"
+                    >
+                      <Icon icon="solar:cloud-upload-bold-duotone" class="h-7 w-7 shrink-0" />
+                      <span class="min-w-0 truncate text-sm font-black">{{ coverFile ? coverFile.name : 'Pilih gambar utama' }}</span>
+                    </button>
+
+                    <input
+                      v-else
+                      v-model="organizationForm.coverUrl"
+                      type="url"
+                      class="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10"
+                      placeholder="https://domain.com/cover.jpg"
+                      @input="clearCoverFile(false)"
+                    >
+
+                    <div class="overflow-hidden rounded-[1.2rem] border border-neutral-200 bg-neutral-50">
+                      <img v-if="coverPreview" :src="coverPreview" alt="Preview cover" class="h-40 w-full object-cover">
+                      <div v-else class="grid h-40 place-items-center text-blue-600">
+                        <Icon icon="solar:gallery-wide-bold-duotone" class="h-10 w-10" />
+                      </div>
+                    </div>
                   </section>
-                </aside>
+                </div>
+
+                <div v-if="isMediaUploading" class="flex items-center gap-2 rounded-2xl bg-blue-50 px-4 py-3 text-xs font-black text-blue-700">
+                  <Icon icon="solar:refresh-bold-duotone" class="h-4 w-4 animate-spin" />
+                  Mengupload gambar...
+                </div>
               </div>
-            </div>
 
-            <footer class="flex flex-col gap-3 border-t border-neutral-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-              <p class="text-xs font-bold text-neutral-500">
-                Langkah {{ formStep }} dari {{ formSteps.length }}
-              </p>
+              <div v-show="formStep === 3" class="space-y-4">
+                <div class="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">
+                  <div class="flex items-start gap-3">
+                    <div class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-blue-600 shadow-sm">
+                      <Icon icon="solar:pen-new-square-bold-duotone" class="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 class="text-base font-black text-neutral-950">Detail & Kontak</h3>
+                      <p class="mt-1 text-sm font-medium leading-6 text-neutral-500">Tulis detail organisasi dan kontak utama.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid gap-4 lg:grid-cols-[1fr_22rem]">
+                  <div class="overflow-hidden rounded-[1.8rem] bg-white p-1">
+                    <RichText v-model="organizationForm.descriptionHtml" placeholder="Tulis informasi lengkap organisasi di sini..." />
+                  </div>
+
+                  <div class="space-y-4">
+                    <div class="grid gap-4 rounded-[1.5rem] border border-neutral-200 bg-white p-4">
+                      <label class="block">
+                        <span class="mb-2 block text-sm font-black text-neutral-800">WhatsApp</span>
+                        <input v-model="organizationForm.whatsapp" type="text" class="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10" placeholder="628...">
+                      </label>
+
+                      <label class="block">
+                        <span class="mb-2 block text-sm font-black text-neutral-800">Email</span>
+                        <input v-model="organizationForm.email" type="email" class="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10" placeholder="nama@email.com">
+                      </label>
+
+                      <label class="block">
+                        <span class="mb-2 block text-sm font-black text-neutral-800">Website</span>
+                        <input v-model="organizationForm.websiteUrl" type="url" class="h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10" placeholder="https://...">
+                      </label>
+
+                      <label class="block">
+                        <span class="mb-2 block text-sm font-black text-neutral-800">Alamat</span>
+                        <textarea v-model="organizationForm.address" rows="4" class="w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold leading-7 text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10" placeholder="Tulis alamat organisasi..."></textarea>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            <div class="flex flex-col-reverse gap-2 border-t border-neutral-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div class="text-xs font-bold text-neutral-400">
+                <span v-if="editingOrganization">Mode edit tidak menimpa draft lokal.</span>
+                <span v-else-if="lastDraftSavedAt">Draft lokal tersimpan {{ lastDraftSavedAt }}.</span>
+                <span v-else>Draft lokal akan tersimpan setelah kamu mulai mengetik.</span>
+              </div>
 
               <div class="flex flex-col-reverse gap-2 sm:flex-row">
-                <button type="button" class="btn-secondary" @click="requestCloseForm">
-                  Batal
-                </button>
-                <button v-if="formStep > 1" type="button" class="btn-secondary" @click="formStep -= 1">
-                  Sebelumnya
-                </button>
-                <button v-if="formStep < formSteps.length" type="button" class="btn-primary" @click="nextStep">
-                  Lanjut
-                  <Icon icon="solar:arrow-right-linear" class="h-4 w-4" />
-                </button>
-                <button v-else type="button" class="btn-primary" :disabled="saving || imageUploading" @click="submitForm">
-                  <Icon icon="solar:diskette-bold-duotone" class="h-4 w-4" :class="saving ? 'animate-spin' : ''" />
-                  {{ saving ? 'Menyimpan...' : 'Simpan' }}
-                </button>
-              </div>
-            </footer>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <!-- Media Modal -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-200 ease-out"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition duration-150 ease-in"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div v-if="showMediaModal" class="fixed inset-0 z-[9992] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm">
-          <div class="w-full max-w-xl rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-2xl">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Tambah Media</p>
-                <h2 class="mt-1 text-xl font-black text-neutral-950">{{ mediaTitle }}</h2>
-                <p class="mt-1 text-sm font-semibold leading-6 text-neutral-500">{{ mediaHelp }}</p>
-              </div>
-              <button type="button" class="grid h-10 w-10 place-items-center rounded-2xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950" @click="closeMediaModal">
-                <Icon icon="solar:close-circle-bold-duotone" class="h-6 w-6" />
-              </button>
-            </div>
-
-            <div class="mt-5 space-y-4">
-              <div>
-                <label class="label">Link atau kode semat</label>
-                <textarea v-model.trim="mediaForm.url" rows="4" :placeholder="mediaPlaceholder" class="textarea-field"></textarea>
-              </div>
-
-              <div>
-                <label class="label">Judul singkat</label>
-                <input v-model.trim="mediaForm.title" type="text" placeholder="Opsional" class="field">
-              </div>
-
-              <div v-if="mediaError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
-                {{ mediaError }}
-              </div>
-            </div>
-
-            <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button type="button" class="btn-secondary" @click="closeMediaModal">Batal</button>
-              <button type="button" class="btn-primary" @click="insertMedia">Tambahkan</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <!-- Link Modal -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-200 ease-out"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition duration-150 ease-in"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div v-if="showLinkModal" class="fixed inset-0 z-[9993] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm">
-          <div class="w-full max-w-lg rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-2xl">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Tambah Link</p>
-                <h2 class="mt-1 text-xl font-black text-neutral-950">Sisipkan tautan</h2>
-                <p class="mt-1 text-sm font-semibold leading-6 text-neutral-500">Gunakan untuk mengarahkan pembaca ke halaman pendukung.</p>
-              </div>
-              <button type="button" class="grid h-10 w-10 place-items-center rounded-2xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950" @click="closeLinkModal">
-                <Icon icon="solar:close-circle-bold-duotone" class="h-6 w-6" />
-              </button>
-            </div>
-
-            <div class="mt-5 space-y-4">
-              <div>
-                <label class="label">Teks link</label>
-                <input v-model.trim="linkForm.text" type="text" class="field" placeholder="Contoh: Buka informasi lengkap">
-              </div>
-              <div>
-                <label class="label">Alamat link</label>
-                <input v-model.trim="linkForm.url" type="url" class="field" placeholder="https://...">
-              </div>
-              <div v-if="linkError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
-                {{ linkError }}
-              </div>
-            </div>
-
-            <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button type="button" class="btn-secondary" @click="closeLinkModal">Batal</button>
-              <button v-if="editor?.isActive('link')" type="button" class="btn-secondary text-red-600" @click="removeLink">Hapus Link</button>
-              <button type="button" class="btn-primary" @click="applyLink">Sisipkan</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <!-- Icon Picker -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-200 ease-out"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition duration-150 ease-in"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div v-if="showIconPicker" class="fixed inset-0 z-[9994] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm">
-          <div class="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-2xl">
-            <header class="border-b border-neutral-200 p-5">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Pilih Ikon</p>
-                  <h2 class="mt-1 text-xl font-black text-neutral-950">Ikon organisasi</h2>
-                </div>
-                <button type="button" class="grid h-10 w-10 place-items-center rounded-2xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950" @click="showIconPicker = false">
-                  <Icon icon="solar:close-circle-bold-duotone" class="h-6 w-6" />
-                </button>
-              </div>
-
-              <div class="mt-4 grid gap-3 sm:grid-cols-[1fr_160px]">
-                <input v-model.trim="iconQuery" type="text" class="field" placeholder="Cari ikon: user, building, mosque..." @input="scheduleIconSearch">
-                <select v-model="iconPrefix" class="field" @change="searchIcons">
-                  <option v-for="item in iconPrefixes" :key="item" :value="item">{{ item }}</option>
-                </select>
-              </div>
-            </header>
-
-            <div class="flex-1 overflow-y-auto p-5">
-              <div v-if="iconLoading" class="grid grid-cols-6 gap-2 sm:grid-cols-10">
-                <div v-for="item in 40" :key="item" class="h-12 animate-pulse rounded-2xl bg-neutral-100"></div>
-              </div>
-
-              <div v-else class="grid grid-cols-6 gap-2 sm:grid-cols-10">
                 <button
-                  v-for="icon in displayedIcons"
-                  :key="icon"
                   type="button"
-                  class="grid h-12 place-items-center rounded-2xl border transition"
-                  :class="form.icon === icon ? 'border-blue-200 bg-blue-50 text-blue-600 ring-4 ring-blue-50' : 'border-neutral-200 bg-white text-neutral-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600'"
-                  @click="selectIcon(icon)"
+                  class="inline-flex h-12 items-center justify-center rounded-2xl border border-neutral-200 bg-white px-5 text-sm font-black text-neutral-700 transition hover:bg-neutral-50"
+                  @click="formStep === 1 ? closeOrganizationModal() : prevFormStep()"
                 >
-                  <Icon :icon="icon" class="h-6 w-6" />
+                  {{ formStep === 1 ? 'Batal' : 'Kembali' }}
+                </button>
+
+                <button
+                  v-if="formStep < formSteps.length"
+                  type="button"
+                  class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="!canGoNext"
+                  @click="nextFormStep"
+                >
+                  Lanjut
+                  <Icon icon="solar:arrow-right-linear" class="h-5 w-5" />
+                </button>
+
+                <button
+                  v-else
+                  type="button"
+                  class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
+                  :disabled="isSubmittingOrganization || isMediaUploading || !canSubmit"
+                  @click="submitOrganizationForm"
+                >
+                  <Icon
+                    :icon="isSubmittingOrganization || isMediaUploading ? 'solar:refresh-bold-duotone' : 'solar:diskette-bold-duotone'"
+                    class="h-5 w-5"
+                    :class="isSubmittingOrganization || isMediaUploading ? 'animate-spin' : ''"
+                  />
+                  {{ isMediaUploading ? 'Upload Gambar...' : isSubmittingOrganization ? 'Menyimpan...' : editingOrganization ? 'Simpan Perubahan' : 'Tambah Organisasi' }}
                 </button>
               </div>
-
-              <div v-if="iconError" class="mt-4 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm font-bold text-yellow-800">
-                {{ iconError }}
-              </div>
             </div>
-          </div>
+          </section>
         </div>
       </Transition>
     </Teleport>
 
-    <!-- Delete Modal -->
     <Teleport to="body">
       <Transition
         enter-active-class="transition duration-200 ease-out"
@@ -968,51 +790,109 @@
         leave-from-class="opacity-100"
         leave-to-class="opacity-0"
       >
-        <div v-if="showDelete" class="fixed inset-0 z-[9995] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm">
-          <div class="w-full max-w-md rounded-[2rem] border border-red-100 bg-white p-5 shadow-2xl">
+        <div
+          v-if="viewModalOpen && selectedOrganization"
+          class="fixed inset-0 z-[130] grid place-items-center bg-neutral-950/60 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          @click.self="closeView"
+        >
+          <section class="flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-[0_32px_110px_rgba(15,23,42,0.28)]">
+            <div class="flex items-start justify-between gap-4 border-b border-neutral-200 p-5">
+              <div>
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Detail Organisasi</p>
+                <h2 class="mt-1 text-2xl font-black tracking-tight text-neutral-950">{{ organizationTitle(selectedOrganization) }}</h2>
+              </div>
+
+              <button
+                type="button"
+                class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-neutral-200 bg-white text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-950"
+                aria-label="Tutup detail organisasi"
+                @click="closeView"
+              >
+                <Icon icon="lucide:x" class="h-5 w-5" />
+              </button>
+            </div>
+
+            <div class="min-h-0 flex-1 overflow-y-auto p-5">
+              <img
+                v-if="organizationCover(selectedOrganization)"
+                :src="organizationCover(selectedOrganization)"
+                :alt="organizationTitle(selectedOrganization)"
+                class="mb-5 h-72 w-full rounded-[1.5rem] object-cover"
+              >
+
+              <div class="mb-5 flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                  <Icon :icon="organizationIcon(selectedOrganization)" class="h-4 w-4" />
+                  {{ organizationTypeLabel(selectedOrganization.organizationType) }}
+                </span>
+                <span class="rounded-full px-3 py-1 text-xs font-black" :class="statusClass(selectedOrganization.status)">
+                  {{ statusLabel(selectedOrganization.status) }}
+                </span>
+              </div>
+
+              <p class="mb-5 rounded-2xl bg-neutral-50 p-4 text-sm font-semibold leading-7 text-neutral-600">
+                {{ selectedOrganization.shortDescription || 'Belum ada ringkasan.' }}
+              </p>
+
+              <div class="organization-content rounded-2xl border border-neutral-200 p-5" v-html="selectedOrganizationContent"></div>
+            </div>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="deleteModalOpen && selectedOrganization"
+          class="fixed inset-0 z-[140] grid place-items-center bg-neutral-950/60 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          @click.self="closeDelete"
+        >
+          <section class="w-full max-w-md rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-[0_32px_110px_rgba(15,23,42,0.28)]">
             <div class="grid h-14 w-14 place-items-center rounded-3xl bg-red-50 text-red-600">
               <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-7 w-7" />
             </div>
-            <h2 class="mt-4 text-xl font-black text-neutral-950">Hapus organisasi?</h2>
-            <p class="mt-2 text-sm font-semibold leading-6 text-neutral-500">
-              Data <b>{{ selectedOrganization?.displayName || selectedOrganization?.name }}</b> akan dipindahkan dari daftar. Tindakan ini sebaiknya dilakukan hanya jika data sudah tidak digunakan.
+
+            <h2 class="mt-5 text-xl font-black tracking-tight text-neutral-950">Hapus Organisasi?</h2>
+            <p class="mt-2 text-sm font-medium leading-6 text-neutral-500">
+              Data <strong class="text-neutral-900">{{ organizationTitle(selectedOrganization) }}</strong> akan dihapus dari daftar.
             </p>
+
             <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button type="button" class="btn-secondary" @click="showDelete = false">Batal</button>
-              <button type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="deleting" @click="confirmDelete">
-                <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" :class="deleting ? 'animate-spin' : ''" />
-                Hapus
+              <button
+                type="button"
+                class="inline-flex h-11 items-center justify-center rounded-2xl border border-neutral-200 bg-white px-5 text-sm font-black text-neutral-700 transition hover:bg-neutral-50"
+                @click="closeDelete"
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 text-sm font-black text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="isMutating"
+                @click="confirmDelete"
+              >
+                <Icon
+                  :icon="isMutating ? 'solar:refresh-bold-duotone' : 'solar:trash-bin-trash-bold-duotone'"
+                  class="h-5 w-5"
+                  :class="isMutating ? 'animate-spin' : ''"
+                />
+                {{ isMutating ? 'Menghapus...' : 'Hapus' }}
               </button>
             </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <!-- Discard Modal -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-200 ease-out"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition duration-150 ease-in"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div v-if="showDiscard" class="fixed inset-0 z-[9996] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm">
-          <div class="w-full max-w-md rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-2xl">
-            <div class="grid h-14 w-14 place-items-center rounded-3xl bg-blue-50 text-blue-600">
-              <Icon icon="solar:shield-warning-bold-duotone" class="h-7 w-7" />
-            </div>
-            <h2 class="mt-4 text-xl font-black text-neutral-950">Tutup form?</h2>
-            <p class="mt-2 text-sm font-semibold leading-6 text-neutral-500">
-              Ada perubahan yang belum disimpan. Kamu bisa kembali mengedit atau menutup form ini.
-            </p>
-            <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button type="button" class="btn-secondary" @click="showDiscard = false">Kembali</button>
-              <button type="button" class="btn-primary" @click="forceCloseForm">Tutup</button>
-            </div>
-          </div>
+          </section>
         </div>
       </Transition>
     </Teleport>
@@ -1021,20 +901,8 @@
 
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
-import { Editor, EditorContent } from '@tiptap/vue-3'
-import StarterKit from '@tiptap/starter-kit'
-import Image from '@tiptap/extension-image'
-import Youtube from '@tiptap/extension-youtube'
-import Link from '@tiptap/extension-link'
-import Underline from '@tiptap/extension-underline'
-import Placeholder from '@tiptap/extension-placeholder'
-import { Table } from '@tiptap/extension-table'
-import { TableRow } from '@tiptap/extension-table-row'
-import { TableCell } from '@tiptap/extension-table-cell'
-import { TableHeader } from '@tiptap/extension-table-header'
-import { Node, mergeAttributes } from '@tiptap/core'
-import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
-import { useRuntimeConfig } from 'nuxt/app'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, unref, watch } from 'vue'
+import { useHead, useRuntimeConfig, useSeoMeta } from '#imports'
 import type {
   CreateOrganizationPayload,
   OrganizationItem,
@@ -1042,8 +910,9 @@ import type {
   OrganizationType,
   UpdateOrganizationPayload
 } from '~/types/organization'
-import { useOrganizationsSQL } from '../../composables/data/useOrganizations'
-import { useCloudinaryUpload as useMediaUpload } from '~/composables/useCloudinaryUpload'
+import RichText from '~/components/widget/RichText.vue'
+import { useOrganizationsSQL } from '~/composables/data/useOrganizations'
+import { useCloudinaryUpload } from '~/composables/useCloudinaryUpload'
 
 definePageMeta({
   layout: 'app',
@@ -1053,41 +922,43 @@ definePageMeta({
 })
 
 type ToastType = 'success' | 'error'
-type MediaType = 'image-url' | 'youtube' | 'pdf' | 'map'
+type ImageInputMode = 'upload' | 'link'
+type LocalStatusFilter = 'all' | OrganizationStatus | 'featured'
+type LocalTypeFilter = 'all' | OrganizationType
+
+type OrganizationDraft = OrganizationForm & {
+  updatedAt?: string
+}
 
 type OrganizationForm = {
   name: string
   displayName: string
-  slug: string
   organizationType: OrganizationType
   shortDescription: string
+  descriptionHtml: string
   logoUrl: string
   coverUrl: string
   email: string
   phone: string
   whatsapp: string
   websiteUrl: string
+  address: string
   instagram: string
   facebook: string
   youtube: string
   tiktok: string
-  address: string
-  status: OrganizationStatus
   isFeatured: boolean
   sortOrder: number
-  icon: string
-  images: string[]
 }
 
 const runtime = useRuntimeConfig()
-
 const {
   tenantSlug,
-  q,
-  selectedType,
-  selectedStatus,
-  featuredOnly,
-  page,
+  q: apiSearch,
+  selectedType: apiSelectedType,
+  selectedStatus: apiSelectedStatus,
+  featuredOnly: apiFeaturedOnly,
+  page: apiPage,
   limit,
   sort,
   organizations,
@@ -1096,64 +967,50 @@ const {
   refresh,
   createOrganization,
   updateOrganization,
-  deleteOrganization,
-  resetFilters: resetApiFilters
+  deleteOrganization
 } = useOrganizationsSQL()
 
-const {
-  uploading: imageUploading,
-  uploadImage
-} = useMediaUpload()
+const { uploading: cloudinaryUploading, uploadImage } = useCloudinaryUpload()
 
-const editor = shallowRef<Editor | null>(null)
+const search = ref('')
+const selectedTypeFilter = ref<LocalTypeFilter>('all')
+const selectedStatusFilter = ref<LocalStatusFilter>('all')
+const viewPage = ref(1)
+const pageSize = 12
 
-const logoFailed = ref(false)
-const failedImages = ref<Record<string, boolean>>({})
+const organizationModalOpen = ref(false)
+const viewModalOpen = ref(false)
+const deleteModalOpen = ref(false)
+
+const formStep = ref(1)
+const editingOrganization = ref<OrganizationItem | null>(null)
+const selectedOrganization = ref<OrganizationItem | null>(null)
+const formError = ref('')
+
+const draftLoaded = ref(false)
+const draftReady = ref(false)
+const draftStarted = ref(false)
+const localDraftExists = ref(false)
+const lastDraftSavedAt = ref('')
+
+const activeMenuOrganization = ref<OrganizationItem | null>(null)
+const ellipsisMenuPosition = reactive({ top: 0, left: 0 })
+const statusPatchedOrganizations = ref<Record<string, OrganizationItem>>({})
+
+const logoInputMode = ref<ImageInputMode>('upload')
+const coverInputMode = ref<ImageInputMode>('upload')
+const logoInputRef = ref<HTMLInputElement | null>(null)
+const coverInputRef = ref<HTMLInputElement | null>(null)
+const logoFile = ref<File | null>(null)
+const coverFile = ref<File | null>(null)
+const logoLocalPreview = ref('')
+const coverLocalPreview = ref('')
+
+const failedCovers = ref<Record<string, boolean>>({})
 const failedLogos = ref<Record<string, boolean>>({})
 
-const showForm = ref(false)
-const showDelete = ref(false)
-const showDiscard = ref(false)
-const showMediaModal = ref(false)
-const showLinkModal = ref(false)
-const showIconPicker = ref(false)
-
-const formMode = ref<'create' | 'edit'>('create')
-const formStep = ref(1)
-const formTouched = ref(false)
-const formDirty = ref(false)
-const saving = ref(false)
-const deleting = ref(false)
-const formError = ref('')
-const selectedOrganization = ref<OrganizationItem | null>(null)
-const manualSlugEdited = ref(false)
-
-const logoInput = ref<HTMLInputElement | null>(null)
-const coverInput = ref<HTMLInputElement | null>(null)
-const galleryInput = ref<HTMLInputElement | null>(null)
-const editorImageInput = ref<HTMLInputElement | null>(null)
-const galleryUrlDraft = ref('')
-
-const mediaType = ref<MediaType>('image-url')
-const mediaError = ref('')
-const mediaForm = reactive({
-  url: '',
-  title: ''
-})
-
-const linkError = ref('')
-const linkForm = reactive({
-  text: '',
-  url: ''
-})
-
-const iconQuery = ref('building')
-const iconPrefix = ref('solar')
-const iconLoading = ref(false)
-const iconError = ref('')
-const iconResults = ref<string[]>([])
-
-let iconSearchTimer: ReturnType<typeof setTimeout> | null = null
+const isSubmittingOrganization = ref(false)
+let draftTimer: ReturnType<typeof setTimeout> | null = null
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 
 const toast = reactive({
@@ -1163,50 +1020,45 @@ const toast = reactive({
   message: ''
 })
 
-const form = reactive<OrganizationForm>({
+const organizationForm = reactive<OrganizationForm>({
   name: '',
   displayName: '',
-  slug: '',
   organizationType: 'custom',
   shortDescription: '',
+  descriptionHtml: '',
   logoUrl: '',
   coverUrl: '',
   email: '',
   phone: '',
   whatsapp: '',
   websiteUrl: '',
+  address: '',
   instagram: '',
   facebook: '',
   youtube: '',
   tiktok: '',
-  address: '',
-  status: 'active',
   isFeatured: true,
-  sortOrder: 0,
-  icon: 'solar:buildings-3-bold-duotone',
-  images: []
+  sortOrder: 0
 })
 
 const formSteps = [
   {
     value: 1,
-    title: 'Identitas',
-    subtitle: 'Nama & tipe'
+    title: 'Informasi',
+    description: 'Nama dan tipe',
+    icon: 'solar:buildings-3-bold-duotone'
   },
   {
     value: 2,
-    title: 'Konten',
-    subtitle: 'Gambar & cerita'
+    title: 'Media',
+    description: 'Logo dan cover',
+    icon: 'solar:gallery-wide-bold-duotone'
   },
   {
     value: 3,
-    title: 'Kontak',
-    subtitle: 'Kanal & status'
-  },
-  {
-    value: 4,
-    title: 'Review',
-    subtitle: 'Cek akhir'
+    title: 'Detail',
+    description: 'Kontak dan konten',
+    icon: 'solar:pen-new-square-bold-duotone'
   }
 ]
 
@@ -1227,441 +1079,363 @@ const typeOptions: Array<{ value: OrganizationType; label: string; icon: string 
   { value: 'custom', label: 'Lainnya', icon: 'solar:widget-5-bold-duotone' }
 ]
 
-const iconPrefixes = ['solar', 'lucide', 'mdi', 'tabler', 'material-symbols', 'heroicons', 'ph']
-
-const fallbackIcons = [
-  'solar:buildings-3-bold-duotone',
-  'solar:users-group-rounded-bold-duotone',
-  'solar:case-round-bold-duotone',
-  'solar:shop-bold-duotone',
-  'solar:heart-pulse-bold-duotone',
-  'solar:shield-check-bold-duotone',
-  'solar:map-point-wave-bold-duotone',
-  'solar:star-shine-bold-duotone',
-  'lucide:building-2',
-  'lucide:users-round',
-  'lucide:landmark',
-  'lucide:heart-handshake',
-  'lucide:store',
-  'lucide:shield-check',
-  'mdi:account-group',
-  'mdi:office-building'
-]
-
-const appName = computed(() => {
-  return String(
-    runtime.public.appName ||
-    runtime.public.clientDisplayName ||
-    runtime.public.siteName ||
-    tenantSlug.value ||
-    'Arsades'
-  )
+const profile = computed(() => {
+  return {
+    name: 'Arsades',
+    title: 'Kelola Organisasi',
+    badge: 'Organizations',
+    icon: 'solar:users-group-rounded-bold-duotone',
+    description: 'Kelola profil organisasi, logo, gambar utama, kontak, status, dan konten publik dengan tampilan seragam seperti halaman berita.',
+    searchPlaceholder: 'Cari organisasi, slug, kontak, atau deskripsi...',
+    emptyDescription: 'Belum ada organisasi. Mulai tambahkan organisasi pertama agar tampil pada halaman publik.',
+    publicBase: '/organizations'
+  }
 })
 
 const appLogo = computed(() => {
-  if (logoFailed.value) return ''
   return String(
     runtime.public.appLogo ||
     runtime.public.logoUrl ||
     runtime.public.siteLogo ||
     runtime.public.favicon ||
     ''
-  )
+  ).trim()
 })
+
+const isLoading = computed(() => Boolean(unref(pending)))
+const isMutating = computed(() => Boolean(isSubmittingOrganization.value || unref(cloudinaryUploading)))
+const isMediaUploading = computed(() => Boolean(unref(cloudinaryUploading)))
+const mediaUploadDisabled = computed(() => Boolean(isSubmittingOrganization.value || isMediaUploading.value))
+
+const logoPreview = computed(() => logoLocalPreview.value || organizationForm.logoUrl.trim())
+const coverPreview = computed(() => coverLocalPreview.value || organizationForm.coverUrl.trim())
 
 const visibleError = computed(() => {
-  if (!error.value) return ''
-  return error.value?.message || 'Data organisasi belum berhasil dimuat.'
+  const value = unref(error)
+  if (!value) return ''
+  return getErrorMessage(value, 'Data organisasi belum berhasil dimuat.')
 })
 
-const displayedIcons = computed(() => {
-  return iconResults.value.length ? iconResults.value : fallbackIcons
-})
+const normalizedOrganizations = computed<OrganizationItem[]>(() => {
+  const baseItems = Array.isArray(unref(organizations)) ? [...unref(organizations)] : []
+  const merged = new Map<string, OrganizationItem>()
 
-const formPublicUrl = computed(() => {
-  const slug = slugify(form.slug || form.name || '')
-  return `/organizations${slug ? `?detail=${encodeURIComponent(slug)}` : ''}`
-})
-
-const reviewHtml = computed(() => {
-  const html = editor.value?.getHTML() || '<p>Konten detail belum diisi.</p>'
-  return sanitizeHtml(html)
-})
-
-const mediaTitle = computed(() => {
-  if (mediaType.value === 'youtube') return 'Sematkan YouTube'
-  if (mediaType.value === 'pdf') return 'Sematkan PDF'
-  if (mediaType.value === 'map') return 'Sematkan Maps'
-  return 'Tambahkan gambar dari link'
-})
-
-const mediaHelp = computed(() => {
-  if (mediaType.value === 'youtube') return 'Tempel link video YouTube agar tampil langsung di artikel.'
-  if (mediaType.value === 'pdf') return 'Tempel link dokumen yang bisa dibuka publik.'
-  if (mediaType.value === 'map') return 'Tempel link atau kode semat lokasi dari Google Maps.'
-  return 'Tempel link gambar yang bisa diakses publik.'
-})
-
-const mediaPlaceholder = computed(() => {
-  if (mediaType.value === 'youtube') return 'https://www.youtube.com/watch?v=...'
-  if (mediaType.value === 'pdf') return 'https://.../dokumen.pdf atau link Google Drive'
-  if (mediaType.value === 'map') return '<iframe src="https://www.google.com/maps/embed?..."></iframe>'
-  return 'https://.../gambar.jpg'
-})
-
-const PdfEmbed = Node.create({
-  name: 'pdfEmbed',
-  group: 'block',
-  atom: true,
-
-  addAttributes() {
-    return {
-      src: { default: null },
-      title: { default: 'PDF' }
-    }
-  },
-
-  parseHTML() {
-    return [{ tag: 'iframe[data-type="pdf-embed"]' }]
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    return [
-      'iframe',
-      mergeAttributes(HTMLAttributes, {
-        'data-type': 'pdf-embed',
-        src: HTMLAttributes.src,
-        title: HTMLAttributes.title || 'PDF',
-        class: 'tiptap-embed tiptap-pdf',
-        loading: 'lazy'
-      })
-    ]
-  },
-
-  addCommands() {
-    return {
-      setPdfEmbed:
-        (attrs: any) =>
-        ({ commands }: any) => {
-          return commands.insertContent({
-            type: this.name,
-            attrs
-          })
-        }
-    } as any
+  for (const item of baseItems) {
+    if (item?.id) merged.set(String(item.id), item)
   }
-})
 
-const MapEmbed = Node.create({
-  name: 'mapEmbed',
-  group: 'block',
-  atom: true,
-
-  addAttributes() {
-    return {
-      src: { default: null },
-      title: { default: 'Maps' }
-    }
-  },
-
-  parseHTML() {
-    return [{ tag: 'iframe[data-type="map-embed"]' }]
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    return [
-      'iframe',
-      mergeAttributes(HTMLAttributes, {
-        'data-type': 'map-embed',
-        src: HTMLAttributes.src,
-        title: HTMLAttributes.title || 'Maps',
-        class: 'tiptap-embed tiptap-map',
-        loading: 'lazy',
-        allowfullscreen: 'true',
-        referrerpolicy: 'no-referrer-when-downgrade'
-      })
-    ]
-  },
-
-  addCommands() {
-    return {
-      setMapEmbed:
-        (attrs: any) =>
-        ({ commands }: any) => {
-          return commands.insertContent({
-            type: this.name,
-            attrs
-          })
-        }
-    } as any
+  for (const item of Object.values(statusPatchedOrganizations.value)) {
+    if (!item?.id) continue
+    const existing = merged.get(String(item.id))
+    merged.set(String(item.id), {
+      ...(existing || {}),
+      ...item,
+      metadata: {
+        ...(existing?.metadata || {}),
+        ...(item.metadata || {})
+      }
+    } as OrganizationItem)
   }
+
+  return Array.from(merged.values()).sort((a, b) => {
+    const sortA = Number(a.sortOrder || 0)
+    const sortB = Number(b.sortOrder || 0)
+    if (sortA !== sortB) return sortA - sortB
+    return organizationTitle(a).localeCompare(organizationTitle(b))
+  })
 })
 
-onMounted(() => {
-  limit.value = 120
-  page.value = 1
-  ensureEditor()
-  searchIcons()
+const activeCount = computed(() => normalizedOrganizations.value.filter((item) => item.status === 'active').length)
+const inactiveCount = computed(() => normalizedOrganizations.value.filter((item) => item.status === 'inactive').length)
+const featuredCount = computed(() => normalizedOrganizations.value.filter((item) => Boolean(item.isFeatured)).length)
+
+const typeFilterOptions = computed<Array<{ value: LocalTypeFilter; label: string; icon: string }>>(() => [
+  { value: 'all', label: 'Semua', icon: 'solar:layers-bold-duotone' },
+  ...typeOptions
+])
+
+const statusFilterOptions = computed<Array<{ value: LocalStatusFilter; label: string; icon: string; count: number }>>(() => [
+  { value: 'all', label: 'Semua', icon: 'solar:layers-bold-duotone', count: normalizedOrganizations.value.length },
+  { value: 'active', label: 'Aktif', icon: 'solar:check-circle-bold-duotone', count: activeCount.value },
+  { value: 'inactive', label: 'Nonaktif', icon: 'solar:pause-circle-bold-duotone', count: inactiveCount.value },
+  { value: 'featured', label: 'Unggulan', icon: 'solar:star-bold-duotone', count: featuredCount.value }
+])
+
+const filteredOrganizations = computed(() => {
+  const keyword = search.value.trim().toLowerCase()
+
+  return normalizedOrganizations.value.filter((item) => {
+    const matchKeyword = !keyword || [
+      item.name,
+      item.displayName,
+      item.slug,
+      item.shortDescription,
+      item.description,
+      item.email,
+      item.phone,
+      item.whatsapp,
+      item.websiteUrl,
+      item.address,
+      organizationTypeLabel(item.organizationType)
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(keyword)
+
+    const matchType = selectedTypeFilter.value === 'all' || item.organizationType === selectedTypeFilter.value
+    const matchStatus = (selectedStatusFilter.value === 'all' || selectedStatusFilter.value === 'featured')
+      ? selectedStatusFilter.value === 'all' || Boolean(item.isFeatured)
+      : item.status === selectedStatusFilter.value
+
+    return matchKeyword && matchType && matchStatus
+  })
 })
 
-onBeforeUnmount(() => {
-  if (toastTimer) clearTimeout(toastTimer)
-  if (iconSearchTimer) clearTimeout(iconSearchTimer)
-  editor.value?.destroy()
+const pagedOrganizations = computed(() => filteredOrganizations.value.slice(0, viewPage.value * pageSize))
+const hasMore = computed(() => pagedOrganizations.value.length < filteredOrganizations.value.length)
+
+const canGoNext = computed(() => {
+  if (formStep.value === 1) return organizationForm.name.trim().length >= 2
+  if (formStep.value === 2) return true
+  return true
+})
+
+const canSubmit = computed(() => organizationForm.name.trim().length >= 2)
+const organizationDraftKey = computed(() => `organizations-form-draft:${tenantSlug.value}`)
+
+const selectedOrganizationContent = computed(() => {
+  if (!selectedOrganization.value) return ''
+  return sanitizeHtml(descriptionHtmlFromItem(selectedOrganization.value))
+})
+
+useSeoMeta({
+  title: () => `${profile.value.title} · ${tenantSlug.value}`,
+  description: () => profile.value.description,
+  ogTitle: () => `${profile.value.title} · ${tenantSlug.value}`,
+  ogDescription: () => profile.value.description,
+  robots: 'noindex, nofollow',
+  themeColor: '#2563eb'
+})
+
+useHead({
+  htmlAttrs: {
+    lang: 'id'
+  },
+  meta: [
+    {
+      name: 'theme-color',
+      content: '#2563eb'
+    }
+  ]
+})
+
+watch([search, selectedTypeFilter, selectedStatusFilter], () => {
+  viewPage.value = 1
 })
 
 watch(
-  () => form.name,
+  organizationForm,
   () => {
-    formDirty.value = true
-    syncSlugFromName()
-  }
-)
-
-watch(
-  form,
-  () => {
-    formDirty.value = true
+    if (!draftStarted.value) return
+    queueOrganizationDraftSave()
   },
   { deep: true }
 )
 
-function ensureEditor() {
-  if (editor.value) return
+onMounted(async () => {
+  prepareApiFilters()
+  refreshLocalDraftState()
+  await reloadOrganizations(true)
+  document.addEventListener('keydown', handleEscape)
+  window.addEventListener('resize', closeEllipsisMenu)
+  window.addEventListener('scroll', closeEllipsisMenu, true)
+})
 
-  editor.value = new Editor({
-    content: '<p></p>',
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3]
-        },
-        bulletList: {
-          keepMarks: true
-        },
-        orderedList: {
-          keepMarks: true
-        }
-      }),
-      Underline,
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        HTMLAttributes: {
-          class: 'text-blue-600 underline underline-offset-4'
-        }
-      }),
-      Image.configure({
-        inline: false,
-        allowBase64: false,
-        HTMLAttributes: {
-          class: 'rounded-2xl border border-neutral-200'
-        }
-      }),
-      Youtube.configure({
-        controls: true,
-        nocookie: true,
-        HTMLAttributes: {
-          class: 'rounded-2xl overflow-hidden'
-        }
-      }),
-      Table.configure({
-        resizable: true,
-        HTMLAttributes: {
-          class: 'tiptap-table'
-        }
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      Placeholder.configure({
-        placeholder: 'Tulis informasi lengkap organisasi di sini...'
-      }),
-      PdfEmbed,
-      MapEmbed
-    ],
-    editorProps: {
-      attributes: {
-        class: 'outline-none min-h-[340px] px-4 py-4 prose prose-neutral max-w-none'
-      }
-    },
-    onUpdate() {
-      formDirty.value = true
-    }
-  })
-}
+onBeforeUnmount(() => {
+  if (draftTimer) clearTimeout(draftTimer)
+  if (toastTimer) clearTimeout(toastTimer)
+  clearLogoFile(false)
+  clearCoverFile(false)
+  document.removeEventListener('keydown', handleEscape)
+  window.removeEventListener('resize', closeEllipsisMenu)
+  window.removeEventListener('scroll', closeEllipsisMenu, true)
+})
 
-async function reloadOrganizations() {
-  try {
-    await refresh()
-    showToast('success', 'Data diperbarui', 'Daftar organisasi berhasil dimuat ulang.')
-  } catch (err: any) {
-    showToast('error', 'Gagal memuat data', err?.message || 'Coba beberapa saat lagi.')
-  }
-}
-
-function resetFilters() {
-  resetApiFilters()
-  selectedStatus.value = 'active'
-  selectedType.value = 'all'
+function prepareApiFilters() {
+  apiSearch.value = ''
+  apiSelectedType.value = 'all'
+  apiSelectedStatus.value = 'all'
+  apiFeaturedOnly.value = false
+  apiPage.value = 1
+  limit.value = 120
   sort.value = 'sort_order'
 }
 
-function resetForm() {
+async function reloadOrganizations(silent = false) {
+  try {
+    prepareApiFilters()
+    await refresh()
+    if (!silent) showToast('success', 'Data Diperbarui', 'Daftar organisasi berhasil dimuat ulang.')
+  } catch (error) {
+    if (!silent) showToast('error', 'Gagal Memuat Data', getErrorMessage(error, 'Data organisasi belum berhasil dimuat.'))
+  }
+}
+
+function createEmptyOrganizationForm(): OrganizationForm {
+  return {
+    name: '',
+    displayName: '',
+    organizationType: 'custom',
+    shortDescription: '',
+    descriptionHtml: '',
+    logoUrl: '',
+    coverUrl: '',
+    email: '',
+    phone: '',
+    whatsapp: '',
+    websiteUrl: '',
+    address: '',
+    instagram: '',
+    facebook: '',
+    youtube: '',
+    tiktok: '',
+    isFeatured: true,
+    sortOrder: 0
+  }
+}
+
+function resetOrganizationForm() {
+  Object.assign(organizationForm, createEmptyOrganizationForm())
+  clearLogoFile(false)
+  clearCoverFile(false)
+  logoInputMode.value = 'upload'
+  coverInputMode.value = 'upload'
+}
+
+async function openCreateOrganizationModal() {
+  closeEllipsisMenu()
+  editingOrganization.value = null
   formStep.value = 1
-  formTouched.value = false
-  formDirty.value = false
   formError.value = ''
-  selectedOrganization.value = null
-  manualSlugEdited.value = false
-  galleryUrlDraft.value = ''
+  draftLoaded.value = false
+  draftStarted.value = false
+  draftReady.value = false
+  resetOrganizationForm()
 
-  form.name = ''
-  form.displayName = ''
-  form.slug = ''
-  form.organizationType = 'custom'
-  form.shortDescription = ''
-  form.logoUrl = ''
-  form.coverUrl = ''
-  form.email = ''
-  form.phone = ''
-  form.whatsapp = ''
-  form.websiteUrl = ''
-  form.instagram = ''
-  form.facebook = ''
-  form.youtube = ''
-  form.tiktok = ''
-  form.address = ''
-  form.status = 'active'
-  form.isFeatured = true
-  form.sortOrder = 0
-  form.icon = defaultIconByType('custom')
-  form.images = []
+  const draft = readOrganizationDraft()
 
-  ensureEditor()
-  editor.value?.commands.setContent('<p></p>')
-
-  nextTick(() => {
-    formDirty.value = false
-  })
-}
-
-function openCreate() {
-  formMode.value = 'create'
-  resetForm()
-  showForm.value = true
-
-  nextTick(() => {
-    ensureEditor()
-    editor.value?.commands.focus()
-    formDirty.value = false
-  })
-}
-
-function openEdit(item: OrganizationItem) {
-  formMode.value = 'edit'
-  resetForm()
-  selectedOrganization.value = item
-
-  form.name = item.name || ''
-  form.displayName = item.displayName || item.name || ''
-  form.slug = item.slug || ''
-  form.organizationType = item.organizationType || 'custom'
-  form.shortDescription = item.shortDescription || ''
-  form.logoUrl = item.logoUrl || ''
-  form.coverUrl = item.coverUrl || getOrganizationImages(item)[0] || ''
-  form.email = item.email || item.contact?.email || ''
-  form.phone = item.phone || item.contact?.phone || ''
-  form.whatsapp = item.whatsapp || item.contact?.whatsapp || ''
-  form.websiteUrl = item.websiteUrl || ''
-  form.instagram = item.social?.instagram || item.metadata?.instagram || ''
-  form.facebook = item.social?.facebook || item.metadata?.facebook || ''
-  form.youtube = item.social?.youtube || item.metadata?.youtube || ''
-  form.tiktok = item.social?.tiktok || item.metadata?.tiktok || ''
-  form.address = item.address || ''
-  form.status = item.status || 'active'
-  form.isFeatured = Boolean(item.isFeatured)
-  form.sortOrder = Number(item.sortOrder || 0)
-  form.icon = item.metadata?.icon || defaultIconByType(item.organizationType || 'custom')
-  form.images = getOrganizationImages(item)
-  manualSlugEdited.value = true
-
-  ensureEditor()
-
-  const metadata = item.metadata || {}
-  if (metadata.descriptionJson) {
-    editor.value?.commands.setContent(metadata.descriptionJson)
-  } else if (metadata.descriptionHtml) {
-    editor.value?.commands.setContent(metadata.descriptionHtml)
-  } else if (item.description) {
-    editor.value?.commands.setContent(item.description)
-  } else {
-    editor.value?.commands.setContent('<p></p>')
+  if (draft) {
+    Object.assign(organizationForm, {
+      ...createEmptyOrganizationForm(),
+      ...draft
+    })
+    draftLoaded.value = true
+    if (draft.logoUrl) logoInputMode.value = 'link'
+    if (draft.coverUrl) coverInputMode.value = 'link'
   }
 
-  showForm.value = true
-
-  nextTick(() => {
-    formDirty.value = false
-  })
+  organizationModalOpen.value = true
+  await nextTick()
+  draftReady.value = true
 }
 
-function requestCloseForm() {
-  if (formDirty.value) {
-    showDiscard.value = true
+async function openEditOrganizationModal(item: OrganizationItem) {
+  closeEllipsisMenu()
+  editingOrganization.value = item
+  formStep.value = 1
+  formError.value = ''
+  draftLoaded.value = false
+  draftStarted.value = false
+  draftReady.value = false
+
+  Object.assign(organizationForm, {
+    name: item.name || '',
+    displayName: item.displayName || item.name || '',
+    organizationType: item.organizationType || 'custom',
+    shortDescription: item.shortDescription || '',
+    descriptionHtml: descriptionHtmlFromItem(item),
+    logoUrl: item.logoUrl || '',
+    coverUrl: organizationCover(item) || '',
+    email: item.email || item.contact?.email || '',
+    phone: item.phone || item.contact?.phone || '',
+    whatsapp: item.whatsapp || item.contact?.whatsapp || '',
+    websiteUrl: item.websiteUrl || '',
+    address: item.address || '',
+    instagram: safeString(item.social?.instagram || item.metadata?.instagram),
+    facebook: safeString(item.social?.facebook || item.metadata?.facebook),
+    youtube: safeString(item.social?.youtube || item.metadata?.youtube),
+    tiktok: safeString(item.social?.tiktok || item.metadata?.tiktok),
+    isFeatured: Boolean(item.isFeatured),
+    sortOrder: Number(item.sortOrder || 0)
+  })
+
+  clearLogoFile(false)
+  clearCoverFile(false)
+  logoInputMode.value = item.logoUrl ? 'link' : 'upload'
+  coverInputMode.value = organizationCover(item) ? 'link' : 'upload'
+
+  organizationModalOpen.value = true
+  await nextTick()
+  draftReady.value = true
+}
+
+function closeOrganizationModal() {
+  organizationModalOpen.value = false
+  draftReady.value = false
+  draftStarted.value = false
+  formError.value = ''
+}
+
+function goToFormStep(targetStep: number) {
+  if (targetStep <= formStep.value) {
+    formStep.value = targetStep
+    formError.value = ''
     return
   }
 
-  forceCloseForm()
+  if (!validateCurrentStep()) return
+  formStep.value = targetStep
 }
 
-function forceCloseForm() {
-  showDiscard.value = false
-  showForm.value = false
+function nextFormStep() {
+  if (!validateCurrentStep()) return
+  formStep.value = Math.min(formStep.value + 1, formSteps.length)
+}
+
+function prevFormStep() {
   formError.value = ''
-  formDirty.value = false
+  formStep.value = Math.max(formStep.value - 1, 1)
 }
 
 function validateCurrentStep() {
-  formTouched.value = true
   formError.value = ''
 
-  if (formStep.value === 1) {
-    if (!form.name.trim()) {
-      formError.value = 'Nama organisasi wajib diisi.'
-      return false
-    }
-
-    if (!form.slug.trim()) {
-      form.slug = slugify(form.name)
-    }
-
-    if (!form.organizationType) {
-      formError.value = 'Tipe organisasi wajib dipilih.'
-      return false
-    }
+  if (formStep.value === 1 && organizationForm.name.trim().length < 2) {
+    formError.value = 'Nama organisasi minimal 2 karakter.'
+    return false
   }
 
   if (formStep.value === 2) {
-    if (form.logoUrl && !isValidUrl(form.logoUrl)) {
+    if (logoInputMode.value === 'link' && organizationForm.logoUrl.trim() && !isValidUrl(organizationForm.logoUrl.trim())) {
       formError.value = 'Link logo belum valid.'
       return false
     }
 
-    if (form.coverUrl && !isValidUrl(form.coverUrl)) {
+    if (coverInputMode.value === 'link' && organizationForm.coverUrl.trim() && !isValidUrl(organizationForm.coverUrl.trim())) {
       formError.value = 'Link gambar utama belum valid.'
       return false
     }
   }
 
   if (formStep.value === 3) {
-    if (form.websiteUrl && !isValidUrl(form.websiteUrl)) {
-      formError.value = 'Link website belum valid.'
+    if (organizationForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(organizationForm.email.trim())) {
+      formError.value = 'Format email belum valid.'
       return false
     }
 
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      formError.value = 'Format email belum valid.'
+    if (organizationForm.websiteUrl.trim() && !isValidUrl(organizationForm.websiteUrl.trim())) {
+      formError.value = 'Link website belum valid.'
       return false
     }
   }
@@ -1670,210 +1444,69 @@ function validateCurrentStep() {
 }
 
 function validateAllSteps() {
-  const current = formStep.value
+  const currentStep = formStep.value
 
   for (const step of formSteps) {
     formStep.value = step.value
-    if (!validateCurrentStep()) {
-      return false
-    }
+    if (!validateCurrentStep()) return false
   }
 
-  formStep.value = current
+  formStep.value = currentStep
+  formError.value = ''
   return true
 }
 
-function nextStep() {
-  if (!validateCurrentStep()) return
-  formStep.value = Math.min(formStep.value + 1, formSteps.length)
-}
-
-function goToStep(step: number) {
-  if (step <= formStep.value) {
-    formStep.value = step
-    return
-  }
-
-  if (!validateCurrentStep()) return
-  formStep.value = step
-}
-
-async function submitForm() {
-  formError.value = ''
+async function submitOrganizationForm() {
+  if (!canSubmit.value || isSubmittingOrganization.value) return
   if (!validateAllSteps()) return
 
-  saving.value = true
+  isSubmittingOrganization.value = true
+  formError.value = ''
 
   try {
-    ensureEditor()
+    const media = await resolveMediaBeforeSubmit()
+    const payload = createOrganizationPayload(editingOrganization.value?.status || 'active', media.logoUrl, media.coverUrl)
 
-    const html = editor.value?.getHTML() || '<p></p>'
-    const json = editor.value?.getJSON() || {}
-    const previousMetadata = selectedOrganization.value?.metadata || {}
-
-    const images = Array.from(new Set([form.coverUrl, ...form.images].map((item) => String(item || '').trim()).filter(Boolean)))
-    const cleanSlug = slugify(form.slug || form.name)
-
-    const payload: CreateOrganizationPayload | UpdateOrganizationPayload = {
-      organizationType: form.organizationType,
-      name: form.name.trim(),
-      displayName: form.displayName.trim() || form.name.trim(),
-      slug: cleanSlug,
-      shortDescription: form.shortDescription.trim(),
-      description: html,
-      logoUrl: form.logoUrl.trim() || null,
-      coverUrl: images[0] || null,
-      email: form.email.trim() || null,
-      phone: form.phone.trim() || null,
-      whatsapp: form.whatsapp.trim() || null,
-      websiteUrl: form.websiteUrl.trim() || null,
-      address: form.address.trim() || null,
-      contact: {
-        email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
-        whatsapp: form.whatsapp.trim() || null
-      },
-      social: {
-        instagram: normalizeSocialValue(form.instagram),
-        facebook: normalizeSocialValue(form.facebook),
-        youtube: normalizeSocialValue(form.youtube),
-        tiktok: normalizeSocialValue(form.tiktok)
-      },
-      metadata: {
-        ...previousMetadata,
-        icon: form.icon || defaultIconByType(form.organizationType),
-        images,
-        descriptionHtml: html,
-        descriptionJson: json,
-        instagram: normalizeSocialValue(form.instagram),
-        facebook: normalizeSocialValue(form.facebook),
-        youtube: normalizeSocialValue(form.youtube),
-        tiktok: normalizeSocialValue(form.tiktok),
-        updatedFrom: 'app-organizations'
-      },
-      status: form.status,
-      isFeatured: Boolean(form.isFeatured),
-      sortOrder: Number(form.sortOrder || 0)
-    }
-
-    if (formMode.value === 'create') {
+    if (editingOrganization.value) {
+      await updateOrganization(editingOrganization.value.id, payload as UpdateOrganizationPayload)
+      showToast('success', 'Organisasi Diupdate', 'Perubahan organisasi berhasil disimpan.')
+    } else {
       await createOrganization(payload as CreateOrganizationPayload)
-      showToast('success', 'Berhasil disimpan', 'Organisasi baru sudah ditambahkan.')
-    } else if (selectedOrganization.value) {
-      await updateOrganization(selectedOrganization.value.id, payload as UpdateOrganizationPayload)
-      showToast('success', 'Perubahan tersimpan', 'Data organisasi berhasil diperbarui.')
+      clearOrganizationDraft()
+      showToast('success', 'Organisasi Ditambahkan', 'Data organisasi berhasil ditambahkan.')
     }
 
-    formDirty.value = false
-    showForm.value = false
-    await refresh()
-  } catch (err: any) {
-    formError.value =
-      err?.data?.statusMessage ||
-      err?.data?.message ||
-      err?.statusMessage ||
-      err?.message ||
-      'Data belum berhasil disimpan.'
+    closeOrganizationModal()
+    await reloadOrganizations(true)
+  } catch (error) {
+    const message = getErrorMessage(error, 'Data organisasi belum berhasil disimpan.')
+    formError.value = message
+    showToast('error', 'Gagal Menyimpan', message)
   } finally {
-    saving.value = false
+    isSubmittingOrganization.value = false
   }
 }
 
-function openDelete(item: OrganizationItem) {
-  selectedOrganization.value = item
-  showDelete.value = true
-}
+async function resolveMediaBeforeSubmit() {
+  let logoUrl = organizationForm.logoUrl.trim()
+  let coverUrl = organizationForm.coverUrl.trim()
 
-async function confirmDelete() {
-  if (!selectedOrganization.value) return
-
-  deleting.value = true
-
-  try {
-    await deleteOrganization(selectedOrganization.value.id)
-    showToast('success', 'Data dihapus', 'Organisasi berhasil dihapus dari daftar.')
-    showDelete.value = false
-    selectedOrganization.value = null
-    await refresh()
-  } catch (err: any) {
-    showToast('error', 'Gagal menghapus', err?.message || 'Coba beberapa saat lagi.')
-  } finally {
-    deleting.value = false
+  if (logoInputMode.value === 'upload' && logoFile.value) {
+    logoUrl = await uploadFileImage(logoFile.value, `${tenantSlug.value}/organizations/logo`)
+    organizationForm.logoUrl = logoUrl
+    clearLogoFile(false)
   }
-}
 
-function syncSlugFromName() {
-  if (manualSlugEdited.value && form.slug) return
-  form.slug = slugify(form.name)
-}
-
-function syncIconFromType() {
-  if (form.icon && form.icon !== defaultIconByType('custom')) return
-  form.icon = defaultIconByType(form.organizationType)
-}
-
-async function onPickLogo(event: Event) {
-  const url = await uploadPickedImage(event, `${tenantSlug.value}/organizations/logo`)
-  if (url) form.logoUrl = url
-}
-
-async function onPickCover(event: Event) {
-  const url = await uploadPickedImage(event, `${tenantSlug.value}/organizations/cover`)
-  if (url) form.coverUrl = url
-}
-
-async function onPickGallery(event: Event) {
-  const input = event.target as HTMLInputElement
-  const files = Array.from(input.files || [])
-
-  if (!files.length) return
-
-  try {
-    const uploaded: string[] = []
-    for (const file of files) {
-      const url = await uploadFileImage(file, `${tenantSlug.value}/organizations/gallery`)
-      uploaded.push(url)
-    }
-
-    form.images = Array.from(new Set([...form.images, ...uploaded]))
-    showToast('success', 'Gambar ditambahkan', 'Galeri berhasil diperbarui.')
-  } catch (err: any) {
-    showToast('error', 'Gambar belum berhasil ditambahkan', err?.message || 'Coba pilih gambar lain.')
-  } finally {
-    input.value = ''
+  if (coverInputMode.value === 'upload' && coverFile.value) {
+    coverUrl = await uploadFileImage(coverFile.value, `${tenantSlug.value}/organizations/cover`)
+    organizationForm.coverUrl = coverUrl
+    clearCoverFile(false)
   }
-}
 
-async function onPickEditorImage(event: Event) {
-  const url = await uploadPickedImage(event, `${tenantSlug.value}/organizations/content`)
-  if (!url) return
+  if (logoUrl && !isValidUrl(logoUrl)) throw new Error('Link logo belum valid.')
+  if (coverUrl && !isValidUrl(coverUrl)) throw new Error('Link gambar utama belum valid.')
 
-  editor.value
-    ?.chain()
-    .focus()
-    .setImage({
-      src: url,
-      alt: 'Gambar konten'
-    })
-    .run()
-
-  showToast('success', 'Gambar masuk ke konten', 'Gambar berhasil ditambahkan ke area tulisan.')
-}
-
-async function uploadPickedImage(event: Event, folder: string) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0] || null
-
-  if (!file) return ''
-
-  try {
-    return await uploadFileImage(file, folder)
-  } catch (err: any) {
-    showToast('error', 'Gambar belum berhasil ditambahkan', err?.message || 'Coba pilih gambar lain.')
-    return ''
-  } finally {
-    input.value = ''
-  }
+  return { logoUrl, coverUrl }
 }
 
 async function uploadFileImage(file: File, folder: string) {
@@ -1885,207 +1518,387 @@ async function uploadFileImage(file: File, folder: string) {
     maxBytes: 5 * 1024 * 1024
   })
 
-  return (result as any).secure_url || (result as any).url || ''
+  return safeString((result as any).secure_url || (result as any).url)
 }
 
-function addGalleryUrl() {
-  const url = galleryUrlDraft.value.trim()
-  if (!url) return
+function createOrganizationPayload(status: OrganizationStatus, logoUrl?: string, coverUrl?: string) {
+  const cleanName = organizationForm.name.trim()
+  const displayName = organizationForm.displayName.trim() || cleanName
+  const cleanSlug = editingOrganization.value?.slug || createOrganizationSlug(cleanName)
+  const descriptionHtml = organizationForm.descriptionHtml.trim() || '<p></p>'
+  const previousMetadata = editingOrganization.value?.metadata || {}
+  const icon = organizationIconFromType(organizationForm.organizationType)
+  const images = Array.from(new Set([coverUrl, ...(Array.isArray(previousMetadata.images) ? previousMetadata.images : [])].map((item) => safeString(item)).filter(Boolean)))
 
-  if (!isValidUrl(url)) {
-    showToast('error', 'Link belum valid', 'Pastikan link gambar diawali dengan http atau https.')
+  return {
+    organizationType: organizationForm.organizationType,
+    name: cleanName,
+    displayName,
+    slug: cleanSlug,
+    shortDescription: organizationForm.shortDescription.trim(),
+    description: descriptionHtml,
+    logoUrl: safeString(logoUrl) || null,
+    coverUrl: safeString(coverUrl) || null,
+    email: organizationForm.email.trim() || null,
+    phone: organizationForm.phone.trim() || null,
+    whatsapp: organizationForm.whatsapp.trim() || null,
+    websiteUrl: organizationForm.websiteUrl.trim() || null,
+    address: organizationForm.address.trim() || null,
+    contact: {
+      email: organizationForm.email.trim() || null,
+      phone: organizationForm.phone.trim() || null,
+      whatsapp: organizationForm.whatsapp.trim() || null
+    },
+    social: {
+      instagram: normalizeOptional(organizationForm.instagram),
+      facebook: normalizeOptional(organizationForm.facebook),
+      youtube: normalizeOptional(organizationForm.youtube),
+      tiktok: normalizeOptional(organizationForm.tiktok)
+    },
+    metadata: {
+      ...previousMetadata,
+      icon,
+      images,
+      descriptionHtml,
+      instagram: normalizeOptional(organizationForm.instagram),
+      facebook: normalizeOptional(organizationForm.facebook),
+      youtube: normalizeOptional(organizationForm.youtube),
+      tiktok: normalizeOptional(organizationForm.tiktok),
+      updatedFrom: 'app-organizations-news-style'
+    },
+    status,
+    isFeatured: Boolean(organizationForm.isFeatured),
+    sortOrder: Number(organizationForm.sortOrder || 0)
+  }
+}
+
+async function toggleOrganizationStatus(item: OrganizationItem) {
+  if (item.status === 'inactive') {
+    await activateOrganization(item)
     return
   }
 
-  form.images = Array.from(new Set([...form.images, url]))
-  galleryUrlDraft.value = ''
+  await deactivateOrganization(item)
 }
 
-function removeGalleryImage(index: number) {
-  form.images = form.images.filter((_, itemIndex) => itemIndex !== index)
+async function deactivateOrganization(item: OrganizationItem) {
+  closeEllipsisMenu()
+
+  try {
+    const nextItem = patchOrganizationStatus(item, 'inactive')
+    await updateOrganization(item.id, createPayloadFromItem(nextItem, 'inactive') as UpdateOrganizationPayload)
+    statusPatchedOrganizations.value[item.id] = nextItem
+    showToast('success', 'Organisasi Dinonaktifkan', 'Status organisasi berhasil diubah menjadi nonaktif.')
+    await reloadOrganizations(true)
+  } catch (error) {
+    showToast('error', 'Gagal Menonaktifkan', getErrorMessage(error, 'Organisasi gagal dinonaktifkan.'))
+  }
 }
 
-function openMediaModal(type: MediaType) {
-  mediaType.value = type
-  mediaForm.url = ''
-  mediaForm.title = ''
-  mediaError.value = ''
-  showMediaModal.value = true
+async function activateOrganization(item: OrganizationItem) {
+  closeEllipsisMenu()
+
+  try {
+    const nextItem = patchOrganizationStatus(item, 'active')
+    await updateOrganization(item.id, createPayloadFromItem(nextItem, 'active') as UpdateOrganizationPayload)
+    statusPatchedOrganizations.value[item.id] = nextItem
+    showToast('success', 'Organisasi Diaktifkan', 'Organisasi berhasil diaktifkan kembali.')
+    await reloadOrganizations(true)
+  } catch (error) {
+    showToast('error', 'Gagal Mengaktifkan', getErrorMessage(error, 'Organisasi gagal diaktifkan.'))
+  }
 }
 
-function closeMediaModal() {
-  showMediaModal.value = false
-  mediaError.value = ''
+function patchOrganizationStatus(item: OrganizationItem, status: OrganizationStatus): OrganizationItem {
+  return {
+    ...item,
+    status,
+    metadata: {
+      ...(item.metadata || {}),
+      statusPatchedAt: new Date().toISOString()
+    }
+  }
 }
 
-function insertMedia() {
-  mediaError.value = ''
+function createPayloadFromItem(item: OrganizationItem, status: OrganizationStatus) {
+  const metadata = item.metadata || {}
+  const descriptionHtml = descriptionHtmlFromItem(item)
+  const coverUrl = organizationCover(item)
+  const icon = safeString(metadata.icon) || organizationIconFromType(item.organizationType || 'custom')
+  const images = getOrganizationImages(item)
 
-  const rawUrl = mediaForm.url.trim()
-  const url = extractIframeSrc(rawUrl)
+  return {
+    organizationType: item.organizationType || 'custom',
+    name: item.name || organizationTitle(item),
+    displayName: item.displayName || item.name || organizationTitle(item),
+    slug: item.slug || createOrganizationSlug(item.name || organizationTitle(item)),
+    shortDescription: item.shortDescription || plainDescription(item).slice(0, 180),
+    description: descriptionHtml,
+    logoUrl: item.logoUrl || null,
+    coverUrl: coverUrl || null,
+    email: item.email || item.contact?.email || null,
+    phone: item.phone || item.contact?.phone || null,
+    whatsapp: item.whatsapp || item.contact?.whatsapp || null,
+    websiteUrl: item.websiteUrl || null,
+    address: item.address || null,
+    contact: {
+      email: item.email || item.contact?.email || null,
+      phone: item.phone || item.contact?.phone || null,
+      whatsapp: item.whatsapp || item.contact?.whatsapp || null
+    },
+    social: {
+      instagram: normalizeOptional(safeString(item.social?.instagram || metadata.instagram)),
+      facebook: normalizeOptional(safeString(item.social?.facebook || metadata.facebook)),
+      youtube: normalizeOptional(safeString(item.social?.youtube || metadata.youtube)),
+      tiktok: normalizeOptional(safeString(item.social?.tiktok || metadata.tiktok))
+    },
+    metadata: {
+      ...metadata,
+      icon,
+      images,
+      descriptionHtml,
+      updatedFrom: 'app-organizations-news-style'
+    },
+    status,
+    isFeatured: Boolean(item.isFeatured),
+    sortOrder: Number(item.sortOrder || 0)
+  }
+}
 
-  if (!url || !isValidUrl(url)) {
-    mediaError.value = 'Link atau kode semat belum valid.'
+function openView(item: OrganizationItem) {
+  selectedOrganization.value = item
+  viewModalOpen.value = true
+  closeEllipsisMenu()
+}
+
+function closeView() {
+  viewModalOpen.value = false
+  selectedOrganization.value = null
+}
+
+function openDelete(item: OrganizationItem) {
+  selectedOrganization.value = item
+  deleteModalOpen.value = true
+  closeEllipsisMenu()
+}
+
+function closeDelete() {
+  deleteModalOpen.value = false
+  selectedOrganization.value = null
+}
+
+async function confirmDelete() {
+  if (!selectedOrganization.value || isMutating.value) return
+
+  try {
+    await deleteOrganization(selectedOrganization.value.id)
+    delete statusPatchedOrganizations.value[selectedOrganization.value.id]
+    showToast('success', 'Organisasi Dihapus', 'Data organisasi berhasil dihapus.')
+    closeDelete()
+    await reloadOrganizations(true)
+  } catch (error) {
+    showToast('error', 'Gagal Menghapus', getErrorMessage(error, 'Data organisasi gagal dihapus.'))
+  }
+}
+
+function openEllipsisMenu(item: OrganizationItem, event: MouseEvent) {
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  const menuWidth = 224
+  const menuHeight = 220
+  const gap = 8
+  const padding = 12
+
+  let left = rect.right - menuWidth
+  let top = rect.bottom + gap
+
+  if (left < padding) left = padding
+  if (left + menuWidth > window.innerWidth - padding) left = window.innerWidth - menuWidth - padding
+  if (top + menuHeight > window.innerHeight - padding) top = rect.top - menuHeight - gap
+  if (top < padding) top = padding
+
+  ellipsisMenuPosition.left = left
+  ellipsisMenuPosition.top = top
+  activeMenuOrganization.value = item
+}
+
+function closeEllipsisMenu() {
+  activeMenuOrganization.value = null
+}
+
+function handleDraftKeyup() {
+  if (editingOrganization.value) return
+  draftStarted.value = true
+  queueOrganizationDraftSave()
+}
+
+function queueOrganizationDraftSave() {
+  if (editingOrganization.value) return
+  if (!organizationModalOpen.value || !draftReady.value || !draftStarted.value) return
+
+  if (draftTimer) clearTimeout(draftTimer)
+
+  draftTimer = setTimeout(() => {
+    saveOrganizationDraft()
+  }, 250)
+}
+
+function readOrganizationDraft(): OrganizationDraft | null {
+  if (!import.meta.client) return null
+
+  try {
+    const raw = localStorage.getItem(organizationDraftKey.value)
+    if (!raw) return null
+    return JSON.parse(raw) as OrganizationDraft
+  } catch {
+    return null
+  }
+}
+
+function saveOrganizationDraft() {
+  if (!import.meta.client) return
+
+  const hasDraft = Boolean(
+    organizationForm.name.trim() ||
+    organizationForm.displayName.trim() ||
+    organizationForm.shortDescription.trim() ||
+    organizationForm.descriptionHtml.trim() ||
+    organizationForm.logoUrl.trim() ||
+    organizationForm.coverUrl.trim() ||
+    organizationForm.email.trim() ||
+    organizationForm.phone.trim() ||
+    organizationForm.whatsapp.trim() ||
+    organizationForm.address.trim()
+  )
+
+  if (!hasDraft) {
+    localStorage.removeItem(organizationDraftKey.value)
+    refreshLocalDraftState()
     return
   }
 
-  ensureEditor()
-
-  if (mediaType.value === 'image-url') {
-    editor.value
-      ?.chain()
-      .focus()
-      .setImage({
-        src: url,
-        alt: mediaForm.title || 'Gambar'
-      })
-      .run()
+  const payload: OrganizationDraft = {
+    ...organizationForm,
+    updatedAt: new Date().toISOString()
   }
 
-  if (mediaType.value === 'youtube') {
-    editor.value
-      ?.chain()
-      .focus()
-      .setYoutubeVideo({
-        src: url,
-        width: 720,
-        height: 405
-      })
-      .run()
-  }
-
-  if (mediaType.value === 'pdf') {
-    ;(editor.value?.commands as any).setPdfEmbed({
-      src: embedPdfUrl(url),
-      title: mediaForm.title || 'PDF'
-    })
-  }
-
-  if (mediaType.value === 'map') {
-    ;(editor.value?.commands as any).setMapEmbed({
-      src: url,
-      title: mediaForm.title || 'Maps'
-    })
-  }
-
-  closeMediaModal()
+  localStorage.setItem(organizationDraftKey.value, JSON.stringify(payload))
+  lastDraftSavedAt.value = formatTimeOnly(Date.now())
+  refreshLocalDraftState()
 }
 
-function openLinkModal() {
-  ensureEditor()
-  const previousUrl = editor.value?.getAttributes('link')?.href || ''
-  const selectedText = getSelectedText()
-
-  linkForm.url = previousUrl
-  linkForm.text = selectedText
-  linkError.value = ''
-  showLinkModal.value = true
+function clearOrganizationDraft() {
+  if (!import.meta.client) return
+  localStorage.removeItem(organizationDraftKey.value)
+  draftLoaded.value = false
+  localDraftExists.value = false
+  lastDraftSavedAt.value = ''
 }
 
-function closeLinkModal() {
-  showLinkModal.value = false
-  linkError.value = ''
+function refreshLocalDraftState() {
+  if (!import.meta.client) return
+  localDraftExists.value = Boolean(localStorage.getItem(organizationDraftKey.value))
 }
 
-function applyLink() {
-  linkError.value = ''
-  const url = linkForm.url.trim()
+function setLogoInputMode(mode: ImageInputMode) {
+  logoInputMode.value = mode
+  formError.value = ''
+  if (mode === 'link') clearLogoFile(false)
+}
 
-  if (!url || !isValidUrl(url)) {
-    linkError.value = 'Alamat link belum valid.'
+function setCoverInputMode(mode: ImageInputMode) {
+  coverInputMode.value = mode
+  formError.value = ''
+  if (mode === 'link') clearCoverFile(false)
+}
+
+function pickLogoFile() {
+  if (mediaUploadDisabled.value) return
+  logoInputRef.value?.click()
+}
+
+function pickCoverFile() {
+  if (mediaUploadDisabled.value) return
+  coverInputRef.value?.click()
+}
+
+function onPickLogoFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0] || null
+  if (!file) return
+  if (!isAllowedImageFile(file)) {
+    if (logoInputRef.value) logoInputRef.value.value = ''
     return
   }
 
-  ensureEditor()
+  clearLogoFile(false)
+  logoFile.value = file
+  logoLocalPreview.value = URL.createObjectURL(file)
+  organizationForm.logoUrl = ''
+  draftStarted.value = true
+  queueOrganizationDraftSave()
+}
 
-  if (getSelectedText()) {
-    editor.value
-      ?.chain()
-      .focus()
-      .extendMarkRange('link')
-      .setLink({ href: url })
-      .run()
-  } else {
-    editor.value
-      ?.chain()
-      .focus()
-      .insertContent({
-        type: 'text',
-        text: linkForm.text || url,
-        marks: [
-          {
-            type: 'link',
-            attrs: {
-              href: url
-            }
-          }
-        ]
-      })
-      .run()
+function onPickCoverFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0] || null
+  if (!file) return
+  if (!isAllowedImageFile(file)) {
+    if (coverInputRef.value) coverInputRef.value.value = ''
+    return
   }
 
-  closeLinkModal()
+  clearCoverFile(false)
+  coverFile.value = file
+  coverLocalPreview.value = URL.createObjectURL(file)
+  organizationForm.coverUrl = ''
+  draftStarted.value = true
+  queueOrganizationDraftSave()
 }
 
-function removeLink() {
-  editor.value?.chain().focus().extendMarkRange('link').unsetLink().run()
-  closeLinkModal()
+function clearLogoFile(resetInput = true) {
+  if (logoLocalPreview.value) URL.revokeObjectURL(logoLocalPreview.value)
+  logoFile.value = null
+  logoLocalPreview.value = ''
+  if (resetInput && logoInputRef.value) logoInputRef.value.value = ''
 }
 
-function insertTable() {
-  ensureEditor()
-  editor.value?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+function clearCoverFile(resetInput = true) {
+  if (coverLocalPreview.value) URL.revokeObjectURL(coverLocalPreview.value)
+  coverFile.value = null
+  coverLocalPreview.value = ''
+  if (resetInput && coverInputRef.value) coverInputRef.value.value = ''
 }
 
-function getSelectedText() {
-  const view = editor.value?.view
-  const state = editor.value?.state
+function isAllowedImageFile(file: File) {
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
-  if (!view || !state) return ''
-
-  const { from, to } = state.selection
-  return state.doc.textBetween(from, to, ' ').trim()
-}
-
-function extractIframeSrc(value: string) {
-  const source = String(value || '').trim()
-  const match = source.match(/src=["']([^"']+)["']/i)
-  return match?.[1] || source
-}
-
-function embedPdfUrl(url: string) {
-  const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/)
-  if (driveMatch?.[1]) {
-    return `https://drive.google.com/file/d/${driveMatch[1]}/preview`
+  if (!allowedTypes.includes(file.type)) {
+    showToast('error', 'Format Gambar Tidak Didukung', 'Gunakan gambar JPG, PNG, atau WebP.')
+    return false
   }
 
-  return url
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('error', 'Ukuran Terlalu Besar', 'Ukuran gambar maksimal 5 MB.')
+    return false
+  }
+
+  return true
 }
 
-function getOrganizationImages(item: OrganizationItem) {
-  const metadataImages = Array.isArray(item.metadata?.images)
-    ? item.metadata.images
-    : []
-
-  const images = [
-    item.coverUrl,
-    ...metadataImages
-  ]
-    .map((value) => String(value || '').trim())
-    .filter(Boolean)
-
-  return Array.from(new Set(images))
+function organizationTitle(item: OrganizationItem) {
+  return safeString(item.displayName || item.name || 'Tanpa Nama')
 }
 
-function getOrganizationCover(item: OrganizationItem) {
-  return getOrganizationImages(item)[0] || item.logoUrl || ''
+function organizationCover(item: OrganizationItem) {
+  return safeString(item.coverUrl || getOrganizationImages(item)[0] || item.logoUrl)
 }
 
-function getOrganizationIcon(item: OrganizationItem) {
-  return item.metadata?.icon || defaultIconByType(item.organizationType || 'custom')
+function organizationIcon(item: OrganizationItem) {
+  return safeString(item.metadata?.icon) || organizationIconFromType(item.organizationType || 'custom')
 }
 
-function defaultIconByType(type: OrganizationType) {
+function organizationIconFromType(type: OrganizationType) {
   return typeOptions.find((item) => item.value === type)?.icon || 'solar:widget-5-bold-duotone'
 }
 
@@ -2093,22 +1906,62 @@ function organizationTypeLabel(type: OrganizationType) {
   return typeOptions.find((item) => item.value === type)?.label || 'Organisasi'
 }
 
-function organizationPublicTo(item: OrganizationItem) {
-  const slug = String(item.slug || '').trim()
-  if (!slug) return '/organizations'
-  return `/organizations?detail=${encodeURIComponent(slug)}`
+function statusLabel(status: OrganizationStatus) {
+  if (status === 'inactive') return 'Nonaktif'
+  return 'Aktif'
 }
 
-async function copyPublicLink(item: OrganizationItem) {
-  const path = organizationPublicTo(item)
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  await navigator.clipboard?.writeText(`${origin}${path}`)
-  showToast('success', 'Link disalin', 'Link public organisasi siap dibagikan.')
+function statusClass(status: OrganizationStatus) {
+  if (status === 'inactive') return 'bg-amber-100/90 text-amber-800'
+  return 'bg-emerald-100/90 text-emerald-800'
 }
 
-function markImageFailed(id: string) {
-  failedImages.value = {
-    ...failedImages.value,
+function primaryContact(item: OrganizationItem) {
+  return safeString(item.whatsapp || item.contact?.whatsapp || item.phone || item.contact?.phone || item.email || item.contact?.email)
+}
+
+function getOrganizationImages(item: OrganizationItem) {
+  const metadataImages = Array.isArray(item.metadata?.images) ? item.metadata.images : []
+  return Array.from(new Set([item.coverUrl, ...metadataImages].map((value) => safeString(value)).filter(Boolean)))
+}
+
+function descriptionHtmlFromItem(item: OrganizationItem) {
+  return sanitizeHtml(safeString(item.metadata?.descriptionHtml || item.description || '<p></p>'))
+}
+
+function plainDescription(item: OrganizationItem) {
+  return stripHtml(descriptionHtmlFromItem(item))
+}
+
+function createOrganizationSlug(title: string) {
+  const baseSlug = slugify(title) || 'organisasi'
+  return editingOrganization.value?.slug || `${baseSlug}-${createTimestampUuid()}`
+}
+
+function createTimestampUuid() {
+  const timestamp = Date.now().toString(36)
+  const random = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10)
+
+  return `${timestamp}-${random}`
+}
+
+function slugify(value: string) {
+  return safeString(value)
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+function markCoverFailed(id: string) {
+  failedCovers.value = {
+    ...failedCovers.value,
     [id]: true
   }
 }
@@ -2120,12 +1973,28 @@ function markLogoFailed(id: string) {
   }
 }
 
-function plainDescription(item: OrganizationItem) {
-  return stripHtml(item.description || item.metadata?.descriptionHtml || '')
+function formatTimeOnly(value: number) {
+  return new Intl.DateTimeFormat('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(value))
+}
+
+function normalizeOptional(value: string) {
+  return safeString(value) || null
+}
+
+function isValidUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return ['http:', 'https:'].includes(url.protocol)
+  } catch {
+    return false
+  }
 }
 
 function stripHtml(value: string) {
-  return String(value || '')
+  return safeString(value)
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]*>/g, ' ')
@@ -2140,7 +2009,7 @@ function stripHtml(value: string) {
 }
 
 function sanitizeHtml(value: string) {
-  return String(value || '')
+  return safeString(value)
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
     .replace(/\son\w+="[^"]*"/gi, '')
@@ -2148,29 +2017,21 @@ function sanitizeHtml(value: string) {
     .replace(/javascript:/gi, '')
 }
 
-function normalizeSocialValue(value: string) {
-  return String(value || '').trim() || null
+function safeString(value: unknown) {
+  return String(value || '').trim()
 }
 
-function isValidUrl(value: string) {
-  try {
-    const url = new URL(value)
-    return ['http:', 'https:'].includes(url.protocol)
-  } catch {
-    return false
+function getErrorMessage(error: unknown, fallback: string) {
+  if (!error) return fallback
+  if (typeof error === 'string') return error
+
+  if (typeof error === 'object' && error !== null) {
+    const record = error as Record<string, any>
+    const data = record.data && typeof record.data === 'object' ? record.data : {}
+    return safeString(data.statusMessage || data.message || record.statusMessage || record.message || fallback)
   }
-}
 
-function slugify(value: string) {
-  return String(value || '')
-    .toLowerCase()
-    .trim()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+  return fallback
 }
 
 function showToast(type: ToastType, title: string, message: string) {
@@ -2191,309 +2052,110 @@ function closeToast() {
   toast.show = false
 }
 
-function scheduleIconSearch() {
-  if (iconSearchTimer) clearTimeout(iconSearchTimer)
-  iconSearchTimer = setTimeout(() => {
-    searchIcons()
-  }, 350)
+function handleEscape(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+
+  closeEllipsisMenu()
+  closeView()
+  closeDelete()
+  closeOrganizationModal()
 }
-
-async function searchIcons() {
-  iconLoading.value = true
-  iconError.value = ''
-
-  try {
-    const response = await $fetch<{ icons?: string[] }>('https://api.iconify.design/search', {
-      query: {
-        query: iconQuery.value || 'building',
-        prefix: iconPrefix.value,
-        limit: 80
-      }
-    })
-
-    iconResults.value = (response.icons || []).map((name) => `${iconPrefix.value}:${name}`)
-  } catch {
-    iconError.value = 'Pencarian ikon online belum tersedia. Pilih ikon bawaan yang tersedia.'
-    iconResults.value = fallbackIcons
-  } finally {
-    iconLoading.value = false
-  }
-}
-
-function selectIcon(icon: string) {
-  form.icon = icon
-  showIconPicker.value = false
-}
-
-const ReviewRow = defineComponent({
-  props: {
-    label: {
-      type: String,
-      required: true
-    },
-    value: {
-      type: String,
-      required: true
-    }
-  },
-  setup(props) {
-    return () =>
-      h(
-        'div',
-        {
-          class:
-            'rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3'
-        },
-        [
-          h(
-            'p',
-            {
-              class:
-                'text-[10px] font-black uppercase tracking-[0.14em] text-neutral-400'
-            },
-            props.label
-          ),
-          h(
-            'p',
-            {
-              class:
-                'mt-1 break-words text-sm font-black leading-6 text-neutral-800'
-            },
-            props.value
-          )
-        ]
-      )
-  }
-})
 </script>
 
 <style scoped>
-.field {
-  width: 100%;
-  border-radius: 1rem;
-  border: 1px solid rgb(229 229 229);
-  background: rgb(250 250 250);
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: rgb(38 38 38);
-  outline: none;
-  transition: 160ms ease;
-}
-
-.field:focus {
-  border-color: rgb(37 99 235);
-  background: white;
-  box-shadow: 0 0 0 4px rgb(219 234 254);
-}
-
-.textarea-field {
-  width: 100%;
-  border-radius: 1rem;
-  border: 1px solid rgb(229 229 229);
-  background: rgb(250 250 250);
-  padding: 0.85rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  line-height: 1.65;
-  color: rgb(38 38 38);
-  outline: none;
-  transition: 160ms ease;
-  resize: vertical;
-}
-
-.textarea-field:focus {
-  border-color: rgb(37 99 235);
-  background: white;
-  box-shadow: 0 0 0 4px rgb(219 234 254);
-}
-
-.label {
-  margin-bottom: 0.5rem;
-  display: block;
-  font-size: 0.8125rem;
-  font-weight: 900;
-  color: rgb(64 64 64);
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: 1rem;
-  background: rgb(37 99 235);
-  padding: 0.75rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 900;
-  color: white;
-  transition: 160ms ease;
-  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.18);
-}
-
-.btn-primary:hover {
-  background: rgb(29 78 216);
-}
-
-.btn-primary:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: 1rem;
-  border: 1px solid rgb(229 229 229);
-  background: white;
-  padding: 0.75rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 900;
-  color: rgb(64 64 64);
-  transition: 160ms ease;
-}
-
-.btn-secondary:hover {
-  background: rgb(250 250 250);
-  border-color: rgb(212 212 212);
-}
-
-.editor-btn,
-.toolbar-btn {
-  display: inline-flex;
-  min-height: 2.25rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  border-radius: 0.875rem;
-  border: 1px solid rgb(229 229 229);
-  background: white;
-  padding: 0.45rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 900;
-  color: rgb(82 82 82);
-  transition: 140ms ease;
-}
-
-.editor-btn:hover,
-.toolbar-btn:hover,
-.editor-btn.active,
-.toolbar-btn.active {
-  border-color: rgb(191 219 254);
-  background: rgb(239 246 255);
-  color: rgb(37 99 235);
-}
-
-.editor-surface :deep(.ProseMirror) {
-  min-height: 340px;
-}
-
-.editor-surface :deep(.ProseMirror:focus) {
-  outline: none;
-}
-
-.editor-surface :deep(h1) {
-  margin-top: 1.25rem;
-  margin-bottom: 0.75rem;
-  font-size: 2rem;
-  line-height: 1.15;
-  font-weight: 950;
-  letter-spacing: -0.04em;
-  color: #171717;
-}
-
-.editor-surface :deep(h2) {
-  margin-top: 1.25rem;
-  margin-bottom: 0.65rem;
-  font-size: 1.55rem;
-  line-height: 1.2;
-  font-weight: 950;
-  letter-spacing: -0.03em;
-  color: #171717;
-}
-
-.editor-surface :deep(h3) {
-  margin-top: 1.1rem;
-  margin-bottom: 0.55rem;
-  font-size: 1.25rem;
-  line-height: 1.3;
-  font-weight: 900;
-  color: #171717;
-}
-
-.editor-surface :deep(p) {
-  margin: 0.75rem 0;
-  line-height: 1.8;
-}
-
-.editor-surface :deep(ul),
-.editor-surface :deep(ol) {
-  margin: 0.85rem 0;
-  padding-left: 1.25rem;
-}
-
-.editor-surface :deep(blockquote) {
-  margin: 1rem 0;
-  border-left: 4px solid #2563eb;
-  border-radius: 0.85rem;
-  background: #f8fafc;
-  padding: 0.85rem 1rem;
-  color: #525252;
-}
-
-.editor-surface :deep(img) {
-  margin: 1rem 0;
-  max-width: 100%;
-  border-radius: 1rem;
-}
-
-.editor-surface :deep(.tiptap-embed) {
-  margin: 1rem 0;
-  min-height: 360px;
-  width: 100%;
-  border: 0;
-  border-radius: 1rem;
-  background: #f5f5f5;
-}
-
-.editor-surface :deep(.tiptap-table) {
-  margin: 1rem 0;
-  width: 100%;
-  border-collapse: collapse;
-  overflow: hidden;
-  border-radius: 1rem;
-}
-
-.editor-surface :deep(.tiptap-table td),
-.editor-surface :deep(.tiptap-table th) {
-  min-width: 90px;
-  border: 1px solid #e5e5e5;
-  padding: 0.65rem 0.75rem;
-  vertical-align: top;
-}
-
-.editor-surface :deep(.tiptap-table th) {
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-weight: 900;
-}
-
-.line-clamp-1,
 .line-clamp-2 {
   display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.line-clamp-1 {
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.line-clamp-2 {
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+.organization-content :deep(h1) {
+  margin: 1rem 0 0.75rem;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 900;
+  color: rgb(23 23 23);
+}
+
+.organization-content :deep(h2) {
+  margin: 1rem 0 0.75rem;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 900;
+  color: rgb(23 23 23);
+}
+
+.organization-content :deep(h3) {
+  margin: 0.875rem 0 0.5rem;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 900;
+  color: rgb(23 23 23);
+}
+
+.organization-content :deep(p) {
+  margin: 0.75rem 0;
+  font-size: 0.95rem;
+  line-height: 1.85;
+  font-weight: 500;
+  color: rgb(64 64 64);
+}
+
+.organization-content :deep(ul),
+.organization-content :deep(ol) {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+  color: rgb(64 64 64);
+}
+
+.organization-content :deep(ul) {
+  list-style: disc;
+}
+
+.organization-content :deep(ol) {
+  list-style: decimal;
+}
+
+.organization-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+  border-radius: 1rem;
+}
+
+.organization-content :deep(iframe) {
+  width: 100%;
+  min-height: 320px;
+  margin: 1rem 0;
+  border-radius: 1rem;
+}
+
+.organization-content :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.organization-content :deep(th),
+.organization-content :deep(td) {
+  border: 1px solid rgb(229 229 229);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.organization-content :deep(th) {
+  background: rgb(239 246 255);
+  color: rgb(29 78 216);
+  font-weight: 900;
 }
 </style>

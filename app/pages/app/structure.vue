@@ -1,112 +1,126 @@
 <template>
-  <main class="relative min-h-screen overflow-hidden bg-[#f7f8fb] text-neutral-950">
+  <main
+    class="relative min-h-screen overflow-hidden bg-[#f7f8fb] text-neutral-950"
+    @mousemove="handlePointerActivity"
+  >
     <div class="pointer-events-none fixed inset-0 opacity-80">
       <div class="absolute -left-40 top-10 h-96 w-96 rounded-full bg-blue-100 blur-3xl"></div>
       <div class="absolute right-0 top-1/4 h-96 w-96 rounded-full bg-cyan-100 blur-3xl"></div>
       <div class="absolute bottom-0 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-indigo-100 blur-3xl"></div>
     </div>
 
-    <!-- Left Floating Tools -->
-    <aside class="fixed left-4 top-1/2 z-40 -translate-y-1/2 rounded-[1.6rem] border border-white/70 bg-white/90 p-2 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl">
-      <div class="space-y-2">
-        <button
-          v-for="tool in tools"
-          :key="tool.value"
-          type="button"
-          class="group relative flex h-12 w-12 items-center justify-center rounded-2xl transition"
-          :class="activeTool === tool.value ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25' : 'text-neutral-500 hover:bg-blue-50 hover:text-blue-700'"
-          :draggable="tool.value === 'block'"
-          @click="handleToolClick(tool.value)"
-          @dragstart="onToolDragStart($event, tool.value)"
-          @dragend="onToolDragEnd"
-        >
-          <Icon :icon="tool.icon" class="h-5 w-5" />
-          <span class="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-xl bg-neutral-950 px-3 py-2 text-xs font-black text-white opacity-0 shadow-xl transition group-hover:opacity-100">
-            {{ tool.label }}
-          </span>
-        </button>
-      </div>
-    </aside>
-
     <!-- Header -->
-    <section class="relative z-10 px-4 py-4 pl-24 sm:px-6 sm:py-5">
+    <section class="relative z-10 px-4 py-4 sm:px-6 sm:py-5">
       <div class="mx-auto flex max-w-[1600px] flex-col gap-3 rounded-[2rem] border border-white/70 bg-white/90 p-3 shadow-sm backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between">
         <div class="flex min-w-0 items-center gap-3">
           <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/25">
-            <Icon icon="solar:hierarchy-bold-duotone" class="h-6 w-6" />
+            <Icon icon="bi:diagram-2-fill" class="h-6 w-6" />
           </div>
+
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
-              <p class="truncate text-lg font-black tracking-tight text-neutral-950 sm:text-xl">Struktur Organisasi</p>
+              <p class="truncate text-lg font-black tracking-tight text-neutral-950 sm:text-xl">
+                Struktur Organisasi
+              </p>
+
               <span class="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-blue-700">
                 {{ tenantSlug }}
               </span>
-              <span v-if="hasUnsavedChanges" class="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-black text-amber-700 ring-1 ring-amber-100">
+
+              <span
+                v-if="hasUnsavedChanges"
+                class="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-black text-amber-700 ring-1 ring-amber-100"
+              >
                 Belum disimpan
               </span>
             </div>
-            <p class="mt-1 line-clamp-1 text-xs font-semibold text-neutral-500">
-              Canvas bagan ala Figma/Framer untuk pemerintahan desa, sekolah, pondok, yayasan, dan tenant lain.
-            </p>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
           <button type="button" class="topbar-button" @click="loadInitialChart">
-            <Icon icon="solar:refresh-bold-duotone" class="h-4 w-4" :class="isLoading ? 'animate-spin' : ''" />
+            <Icon
+              icon="solar:refresh-bold-duotone"
+              class="h-4 w-4"
+              :class="isLoading ? 'animate-spin' : ''"
+            />
             Refresh
           </button>
+
           <button type="button" class="topbar-button" @click="resetView">
             <Icon icon="solar:round-graph-bold-duotone" class="h-4 w-4" />
             Reset View
           </button>
+
           <div class="relative">
-            <button type="button" class="topbar-button" @click="exportMenuOpen = !exportMenuOpen">
+            <button type="button" class="topbar-button" @click="toggleExportMenu">
               <Icon icon="solar:export-bold-duotone" class="h-4 w-4" />
               Export
             </button>
-            <div v-if="exportMenuOpen" class="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-44 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-1 shadow-2xl">
+
+            <div
+              v-if="exportMenuOpen"
+              class="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-44 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-1 shadow-2xl"
+            >
               <button type="button" class="menu-button" @click="exportAsPdf">
                 <Icon icon="solar:file-text-bold-duotone" class="h-4 w-4" />
                 PDF
               </button>
+
               <button type="button" class="menu-button" @click="exportAsCsv">
                 <Icon icon="solar:document-bold-duotone" class="h-4 w-4" />
                 CSV
               </button>
+
               <button type="button" class="menu-button" @click="exportAsExcel">
                 <Icon icon="solar:table-bold-duotone" class="h-4 w-4" />
                 Excel
               </button>
             </div>
           </div>
-          <button type="button" class="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-black text-white shadow-lg shadow-blue-600/25 transition hover:-translate-y-0.5 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="isSaving" @click="saveDiagram">
-            <Icon :icon="isSaving ? 'svg-spinners:180-ring' : 'solar:diskette-bold-duotone'" class="h-4 w-4" />
+
+          <button
+            type="button"
+            class="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-black text-white shadow-lg shadow-blue-600/25 transition hover:-translate-y-0.5 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="isSaving"
+            @click="saveDiagram"
+          >
+            <Icon
+              :icon="isSaving ? 'svg-spinners:180-ring' : 'solar:diskette-bold-duotone'"
+              class="h-4 w-4"
+            />
             {{ isSaving ? 'Menyimpan...' : 'Save' }}
           </button>
         </div>
       </div>
     </section>
 
-    <!-- Canvas Workspace -->
-    <section class="relative z-10 px-4 pb-4 pl-24 sm:px-6 sm:pb-6">
-      <div class="mx-auto grid max-w-[1600px] gap-4 lg:grid-cols-[1fr_300px]">
+    <!-- Canvas -->
+    <section class="relative z-10 px-4 pb-4 sm:px-6 sm:pb-6">
+      <div class="mx-auto max-w-[1600px]">
         <div
           ref="stageShell"
           class="relative min-h-[calc(100vh-7.5rem)] overflow-hidden rounded-[2rem] border border-white/70 bg-white/85 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur-xl"
           @dragover.prevent
           @drop="onCanvasDrop"
-          @click="closeFloatingMenus"
+          @contextmenu.prevent="openCanvasToolMenu"
         >
           <div class="pointer-events-none absolute inset-0 canvas-grid"></div>
+
           <div class="absolute left-4 top-4 z-20 flex flex-wrap items-center gap-2">
             <div class="rounded-2xl border border-neutral-200 bg-white/90 px-3 py-2 text-xs font-black text-neutral-600 shadow-sm backdrop-blur">
-              Tool: <span class="text-blue-700">{{ activeToolLabel }}</span>
+              Tool:
+              <span class="text-blue-700">{{ activeToolLabel }}</span>
             </div>
+
             <div class="rounded-2xl border border-neutral-200 bg-white/90 px-3 py-2 text-xs font-black text-neutral-600 shadow-sm backdrop-blur">
               Zoom: {{ Math.round(stageScale * 100) }}%
             </div>
-            <div v-if="lineSource" class="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 shadow-sm">
+
+            <div
+              v-if="lineSource"
+              class="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 shadow-sm"
+            >
               Pilih node tujuan
             </div>
           </div>
@@ -120,6 +134,7 @@
               @mousemove="onStageMouseMove"
               @mouseup="onStageMouseUp"
               @click="onStageClick"
+              @contextmenu="onKonvaStageContextMenu"
             >
               <v-layer ref="gridLayerRef">
                 <v-line
@@ -134,9 +149,25 @@
                   v-for="edge in edges"
                   :key="edge.id"
                   :config="edgeKonvaConfig(edge)"
-                  @click="selectEdge(edge.id)"
+                  @click="selectEdge($event, edge.id)"
+                  @dblclick="openEdgeSettingsFromCanvas($event, edge)"
                   @contextmenu="openEdgeContextMenu($event, edge)"
                 />
+
+                <v-group
+                  v-for="handle in selectedEdgeHandles"
+                  :key="handle.id"
+                  :config="edgeControlGroupConfig(handle)"
+                  @dragstart="onEdgeControlDragStart($event, handle)"
+                  @dragmove="onEdgeControlDragMove($event, handle)"
+                  @dragend="onEdgeControlDragEnd($event, handle)"
+                  @mouseenter="setStageCursor('grab')"
+                  @mouseleave="setStageCursor(activeTool === 'line' ? 'crosshair' : 'default')"
+                >
+                  <v-circle :config="edgeControlOuterConfig(handle)" />
+                  <v-circle :config="edgeControlInnerConfig(handle)" />
+                </v-group>
+
                 <v-line
                   v-if="tempLine"
                   :config="tempLineConfig"
@@ -154,7 +185,7 @@
                   @mouseenter="onNodeMouseEnter(node)"
                   @mouseleave="onNodeMouseLeave(node)"
                   @click="onNodeClick($event, node)"
-                  @dblclick="openNodeSettings(node)"
+                  @dblclick="openNodeSettingsFromGroup($event, node)"
                   @contextmenu="openNodeContextMenu($event, node)"
                 >
                   <v-rect :config="nodeShadowConfig(node)" />
@@ -162,25 +193,28 @@
 
                   <v-group :config="photoGroupConfig(node)">
                     <v-circle :config="photoBackgroundConfig(node)" />
+
                     <v-image
                       v-if="imageCache[node.id]"
                       :config="nodePhotoImageConfig(node)"
-                      @dblclick="openPhotoPicker(node)"
+                      @dblclick="openPhotoPicker($event, node)"
                     />
+
                     <v-text
                       v-else
                       :config="nodePhotoFallbackConfig(node)"
-                      @dblclick="openPhotoPicker(node)"
+                      @dblclick="openPhotoPicker($event, node)"
                     />
                   </v-group>
 
                   <v-text
                     :config="nodeNameTextConfig(node)"
-                    @dblclick="openTextEditor(node, 'name')"
+                    @dblclick="openTextEditor($event, node, 'name')"
                   />
+
                   <v-text
                     :config="nodePositionTextConfig(node)"
-                    @dblclick="openTextEditor(node, 'positionTitle')"
+                    @dblclick="openTextEditor($event, node, 'positionTitle')"
                   />
 
                   <v-group
@@ -206,94 +240,145 @@
             </v-stage>
           </ClientOnly>
 
-          <input ref="photoInput" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" @change="onPickPhoto">
-
-          <!-- Context Menu -->
-          <div
-            v-if="contextMenu.show"
-            class="fixed z-[80] w-52 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-1 shadow-2xl shadow-neutral-950/15"
-            :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
-            @click.stop
+          <input
+            ref="photoInput"
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            class="hidden"
+            @change="onPickPhoto"
           >
-            <button type="button" class="menu-button" @click="contextMenu.kind === 'node' ? openNodeSettingsById(contextMenu.targetId) : openEdgeSettingsById(contextMenu.targetId)">
-              <Icon icon="solar:settings-bold-duotone" class="h-4 w-4" />
-              Edit Param
-            </button>
-            <button v-if="contextMenu.kind === 'node'" type="button" class="menu-button" @click="duplicateNodeById(contextMenu.targetId)">
-              <Icon icon="solar:copy-bold-duotone" class="h-4 w-4" />
-              Duplikat
-            </button>
-            <button type="button" class="menu-button text-red-600 hover:bg-red-50" @click="requestDelete(contextMenu.kind, contextMenu.targetId)">
-              <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" />
-              Hapus
-            </button>
-          </div>
+
+          <!-- Right Floating Tools -->
+          <Transition name="tool-menu">
+            <aside
+              v-if="toolMenuVisible"
+              class="fixed z-[75] rounded-[1.6rem] border border-white/70 bg-white/95 p-2 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur-xl"
+              :style="toolMenuStyle"
+              @mouseenter="toolMenuHover = true"
+              @mouseleave="onToolMenuLeave"
+              @click.stop
+            >
+              <div class="space-y-2">
+                <button
+                  v-for="tool in tools"
+                  :key="tool.value"
+                  type="button"
+                  class="group relative flex h-12 w-12 items-center justify-center rounded-2xl transition"
+                  :class="activeTool === tool.value ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25' : 'text-neutral-500 hover:bg-blue-50 hover:text-blue-700'"
+                  :draggable="tool.value === 'block'"
+                  @click="handleToolClick(tool.value)"
+                  @dragstart="onToolDragStart($event, tool.value)"
+                  @dragend="onToolDragEnd"
+                >
+                  <Icon :icon="tool.icon" class="h-5 w-5" />
+
+                  <span class="pointer-events-none absolute right-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-xl bg-neutral-950 px-3 py-2 text-xs font-black text-white opacity-0 shadow-xl transition group-hover:opacity-100">
+                    {{ tool.label }}
+                  </span>
+                </button>
+              </div>
+            </aside>
+          </Transition>
+
         </div>
-
-        <!-- Compact Inspector -->
-        <aside class="hidden min-h-[calc(100vh-7.5rem)] rounded-[2rem] border border-white/70 bg-white/90 p-4 shadow-sm backdrop-blur-xl lg:block">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Inspector</p>
-              <h2 class="mt-1 text-lg font-black text-neutral-950">Canvas</h2>
-            </div>
-            <div class="grid h-10 w-10 place-items-center rounded-2xl bg-blue-50 text-blue-600">
-              <Icon icon="solar:slider-vertical-bold-duotone" class="h-5 w-5" />
-            </div>
-          </div>
-
-          <div class="mt-5 space-y-3">
-            <div class="rounded-3xl border border-neutral-200 bg-neutral-50 p-4">
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-neutral-400">Bagan</p>
-              <input v-model.trim="chart.title" type="text" class="mt-3 input-field" placeholder="Judul bagan">
-              <input v-model.trim="chart.slug" type="text" class="mt-2 input-field" placeholder="slug-bagan">
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <div class="rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
-                <p class="text-[11px] font-black text-neutral-400">Nodes</p>
-                <p class="mt-1 text-2xl font-black text-neutral-950">{{ nodes.length }}</p>
-              </div>
-              <div class="rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
-                <p class="text-[11px] font-black text-neutral-400">Lines</p>
-                <p class="mt-1 text-2xl font-black text-neutral-950">{{ edges.length }}</p>
-              </div>
-            </div>
-
-            <div class="rounded-3xl border border-neutral-200 bg-neutral-50 p-4">
-              <p class="text-sm font-black text-neutral-950">Selected</p>
-              <div v-if="selectedNode" class="mt-3 flex items-center gap-3">
-                <div class="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-                  <img v-if="selectedNode.photoUrl" :src="selectedNode.photoUrl" class="h-full w-full object-cover" alt="">
-                  <Icon v-else icon="solar:user-rounded-bold-duotone" class="h-6 w-6 text-blue-600" />
-                </div>
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-black text-neutral-950">{{ selectedNode.name }}</p>
-                  <p class="truncate text-xs font-semibold text-neutral-500">{{ selectedNode.positionTitle }}</p>
-                </div>
-              </div>
-              <p v-else-if="selectedEdge" class="mt-3 text-sm font-bold text-neutral-600">Line dipilih</p>
-              <p v-else class="mt-3 text-sm font-bold text-neutral-400">Klik node atau line.</p>
-            </div>
-
-            <div class="rounded-3xl border border-blue-100 bg-blue-50 p-4 text-xs font-semibold leading-5 text-blue-700">
-              Double click text untuk edit, double click photo untuk upload, klik kanan untuk dropdown param.
-            </div>
-          </div>
-        </aside>
       </div>
     </section>
+
+    <!-- Action Modal -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div
+          v-if="actionModal.open"
+          class="fixed inset-0 z-[88] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm"
+          @mousedown.self="closeActionModal"
+        >
+          <section class="w-full max-w-md overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-2xl">
+            <header class="flex items-start justify-between gap-4 border-b border-neutral-100 bg-gradient-to-br from-blue-50 via-white to-white p-5">
+              <div>
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">
+                  {{ actionModal.kind === 'node' ? 'Block' : 'Line' }}
+                </p>
+                <h3 class="mt-1 text-xl font-black text-neutral-950">
+                  Pilih Aksi
+                </h3>
+                <p class="mt-1 text-sm font-semibold text-neutral-500">
+                  Atur parameter, duplikat, atau hapus item yang dipilih.
+                </p>
+              </div>
+
+              <button type="button" class="modal-close" @click="closeActionModal">
+                <Icon icon="solar:close-circle-bold-duotone" class="h-5 w-5" />
+              </button>
+            </header>
+
+            <div class="space-y-2 p-4">
+              <button
+                type="button"
+                class="action-modal-button"
+                @click="openSelectedSettings"
+              >
+                <span class="grid h-10 w-10 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+                  <Icon icon="solar:settings-bold-duotone" class="h-5 w-5" />
+                </span>
+                <span class="min-w-0 text-left">
+                  <span class="block text-sm font-black text-neutral-950">Edit Param</span>
+                  <span class="block text-xs font-semibold text-neutral-500">Ubah warna, rounded, ukuran, dan style.</span>
+                </span>
+              </button>
+
+              <button
+                v-if="actionModal.kind === 'node'"
+                type="button"
+                class="action-modal-button"
+                @click="duplicateSelectedNode"
+              >
+                <span class="grid h-10 w-10 place-items-center rounded-2xl bg-cyan-50 text-cyan-600">
+                  <Icon icon="solar:copy-bold-duotone" class="h-5 w-5" />
+                </span>
+                <span class="min-w-0 text-left">
+                  <span class="block text-sm font-black text-neutral-950">Duplikat Block</span>
+                  <span class="block text-xs font-semibold text-neutral-500">Buat salinan block di dekat posisi saat ini.</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                class="action-modal-button hover:border-red-100 hover:bg-red-50"
+                @click="deleteSelectedFromActionModal"
+              >
+                <span class="grid h-10 w-10 place-items-center rounded-2xl bg-red-50 text-red-600">
+                  <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-5 w-5" />
+                </span>
+                <span class="min-w-0 text-left">
+                  <span class="block text-sm font-black text-red-600">Hapus</span>
+                  <span class="block text-xs font-semibold text-red-400">Tampilkan konfirmasi sebelum menghapus.</span>
+                </span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- Node Settings Modal -->
     <Teleport to="body">
       <Transition name="modal-fade">
-        <div v-if="nodeSettingsOpen" class="fixed inset-0 z-[90] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm" @mousedown.self="closeNodeSettings">
+        <div
+          v-if="nodeSettingsOpen"
+          class="fixed inset-0 z-[90] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm"
+          @mousedown.self="closeNodeSettings"
+        >
           <section class="w-full max-w-2xl overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-2xl">
             <header class="flex items-start justify-between gap-4 border-b border-neutral-100 bg-gradient-to-br from-blue-50 via-white to-white p-5">
               <div>
-                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Edit Param</p>
-                <h3 class="mt-1 text-xl font-black text-neutral-950">Block Organisasi</h3>
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">
+                  Edit Param
+                </p>
+                <h3 class="mt-1 text-xl font-black text-neutral-950">
+                  Block Organisasi
+                </h3>
               </div>
+
               <button type="button" class="modal-close" @click="closeNodeSettings">
                 <Icon icon="solar:close-circle-bold-duotone" class="h-5 w-5" />
               </button>
@@ -303,70 +388,156 @@
               <label class="field-label sm:col-span-2">
                 <span>Photo URL</span>
                 <div class="mt-2 flex gap-2">
-                  <input v-model.trim="nodeForm.photoUrl" type="url" class="input-field" placeholder="https://res.cloudinary.com/...">
+                  <input
+                    v-model.trim="nodeForm.photoUrl"
+                    type="url"
+                    class="input-field"
+                    placeholder="https://res.cloudinary.com/..."
+                  >
                   <button type="button" class="secondary-button shrink-0" @click="triggerNodeFormPhoto">
                     <Icon icon="solar:upload-bold-duotone" class="h-4 w-4" />
                   </button>
                 </div>
               </label>
+
               <label class="field-label">
                 <span>Nama</span>
-                <input v-model.trim="nodeForm.name" type="text" class="input-field" placeholder="Nama pejabat">
+                <input
+                  v-model.trim="nodeForm.name"
+                  type="text"
+                  class="input-field"
+                  placeholder="Nama pejabat"
+                >
               </label>
+
               <label class="field-label">
                 <span>Jabatan</span>
-                <input v-model.trim="nodeForm.positionTitle" type="text" class="input-field" placeholder="Kepala Desa">
+                <input
+                  v-model.trim="nodeForm.positionTitle"
+                  type="text"
+                  class="input-field"
+                  placeholder="Kepala Desa"
+                >
               </label>
+
               <label class="field-label">
                 <span>Rounded</span>
-                <input v-model.number="nodeForm.cornerRadius" type="range" min="0" max="36" class="range-field">
-                <p class="mt-1 text-xs font-black text-neutral-400">{{ nodeForm.cornerRadius }}px</p>
+                <input
+                  v-model.number="nodeForm.cornerRadius"
+                  type="range"
+                  min="0"
+                  max="36"
+                  class="range-field"
+                >
+                <p class="mt-1 text-xs font-black text-neutral-400">
+                  {{ nodeForm.cornerRadius }}px
+                </p>
               </label>
+
               <label class="field-label">
                 <span>Background</span>
                 <div class="mt-2 flex gap-2">
-                  <input v-model="nodeForm.fillColor" type="color" class="h-11 w-14 rounded-2xl border border-neutral-200 bg-white p-1">
-                  <input v-model.trim="nodeForm.fillColor" type="text" class="input-field" placeholder="#ffffff">
+                  <input
+                    v-model="nodeForm.fillColor"
+                    type="color"
+                    class="h-11 w-14 rounded-2xl border border-neutral-200 bg-white p-1"
+                  >
+                  <input
+                    v-model.trim="nodeForm.fillColor"
+                    type="text"
+                    class="input-field"
+                    placeholder="#ffffff"
+                  >
                 </div>
               </label>
+
               <label class="field-label">
                 <span>Padding</span>
-                <input v-model.number="nodeForm.padding" type="number" min="8" max="40" class="input-field">
+                <input
+                  v-model.number="nodeForm.padding"
+                  type="number"
+                  min="8"
+                  max="40"
+                  class="input-field"
+                >
               </label>
+
               <label class="field-label">
                 <span>Accent Color</span>
                 <div class="mt-2 flex gap-2">
-                  <input v-model="nodeForm.accentColor" type="color" class="h-11 w-14 rounded-2xl border border-neutral-200 bg-white p-1">
-                  <input v-model.trim="nodeForm.accentColor" type="text" class="input-field">
+                  <input
+                    v-model="nodeForm.accentColor"
+                    type="color"
+                    class="h-11 w-14 rounded-2xl border border-neutral-200 bg-white p-1"
+                  >
+                  <input
+                    v-model.trim="nodeForm.accentColor"
+                    type="text"
+                    class="input-field"
+                  >
                 </div>
               </label>
+
               <label class="field-label">
                 <span>Width</span>
-                <input v-model.number="nodeForm.width" type="number" min="150" class="input-field">
+                <input
+                  v-model.number="nodeForm.width"
+                  type="number"
+                  min="150"
+                  class="input-field"
+                >
               </label>
+
               <label class="field-label">
                 <span>Height</span>
-                <input v-model.number="nodeForm.height" type="number" min="90" class="input-field">
+                <input
+                  v-model.number="nodeForm.height"
+                  type="number"
+                  min="90"
+                  class="input-field"
+                >
               </label>
+
               <label class="field-label">
                 <span>Text Color</span>
                 <div class="mt-2 flex gap-2">
-                  <input v-model="nodeForm.textColor" type="color" class="h-11 w-14 rounded-2xl border border-neutral-200 bg-white p-1">
-                  <input v-model.trim="nodeForm.textColor" type="text" class="input-field">
+                  <input
+                    v-model="nodeForm.textColor"
+                    type="color"
+                    class="h-11 w-14 rounded-2xl border border-neutral-200 bg-white p-1"
+                  >
+                  <input
+                    v-model.trim="nodeForm.textColor"
+                    type="text"
+                    class="input-field"
+                  >
                 </div>
               </label>
+
               <label class="field-label">
                 <span>Border Color</span>
                 <div class="mt-2 flex gap-2">
-                  <input v-model="nodeForm.borderColor" type="color" class="h-11 w-14 rounded-2xl border border-neutral-200 bg-white p-1">
-                  <input v-model.trim="nodeForm.borderColor" type="text" class="input-field">
+                  <input
+                    v-model="nodeForm.borderColor"
+                    type="color"
+                    class="h-11 w-14 rounded-2xl border border-neutral-200 bg-white p-1"
+                  >
+                  <input
+                    v-model.trim="nodeForm.borderColor"
+                    type="text"
+                    class="input-field"
+                  >
                 </div>
               </label>
             </div>
 
             <footer class="flex flex-col-reverse gap-2 border-t border-neutral-100 bg-neutral-50 p-5 sm:flex-row sm:justify-end">
-              <button type="button" class="secondary-button" @click="closeNodeSettings">Batal</button>
-              <button type="button" class="primary-button" @click="applyNodeSettings">Terapkan</button>
+              <button type="button" class="secondary-button" @click="closeNodeSettings">
+                Batal
+              </button>
+              <button type="button" class="primary-button" @click="applyNodeSettings">
+                Terapkan
+              </button>
             </footer>
           </section>
         </div>
@@ -376,41 +547,75 @@
     <!-- Edge Settings Modal -->
     <Teleport to="body">
       <Transition name="modal-fade">
-        <div v-if="edgeSettingsOpen" class="fixed inset-0 z-[90] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm" @mousedown.self="closeEdgeSettings">
+        <div
+          v-if="edgeSettingsOpen"
+          class="fixed inset-0 z-[90] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm"
+          @mousedown.self="closeEdgeSettings"
+        >
           <section class="w-full max-w-lg overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-2xl">
             <header class="flex items-start justify-between gap-4 border-b border-neutral-100 bg-gradient-to-br from-blue-50 via-white to-white p-5">
               <div>
-                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Line</p>
-                <h3 class="mt-1 text-xl font-black text-neutral-950">Edit Garis</h3>
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">
+                  Line
+                </p>
+                <h3 class="mt-1 text-xl font-black text-neutral-950">
+                  Edit Garis
+                </h3>
               </div>
+
               <button type="button" class="modal-close" @click="closeEdgeSettings">
                 <Icon icon="solar:close-circle-bold-duotone" class="h-5 w-5" />
               </button>
             </header>
+
             <div class="grid gap-4 p-5 sm:grid-cols-2">
               <label class="field-label sm:col-span-2">
                 <span>Label</span>
-                <input v-model.trim="edgeForm.label" type="text" class="input-field" placeholder="Opsional">
+                <input
+                  v-model.trim="edgeForm.label"
+                  type="text"
+                  class="input-field"
+                  placeholder="Opsional"
+                >
               </label>
+
               <label class="field-label">
                 <span>Line Type</span>
                 <select v-model="edgeForm.lineType" class="input-field">
                   <option value="orthogonal">Orthogonal 90°</option>
                   <option value="straight">Straight</option>
-                  <option value="bezier">Bezier</option>
+                  <option value="bezier">Bezier / Curve</option>
+                  <option value="manual">Manual / Figma Handle</option>
                 </select>
               </label>
+
               <label class="field-label">
                 <span>Width</span>
-                <input v-model.number="edgeForm.strokeWidth" type="number" min="1" max="10" class="input-field">
+                <input
+                  v-model.number="edgeForm.strokeWidth"
+                  type="number"
+                  min="1"
+                  max="10"
+                  class="input-field"
+                >
               </label>
+
               <label class="field-label">
                 <span>Color</span>
                 <div class="mt-2 flex gap-2">
-                  <input v-model="edgeForm.strokeColor" type="color" class="h-11 w-14 rounded-2xl border border-neutral-200 bg-white p-1">
-                  <input v-model.trim="edgeForm.strokeColor" type="text" class="input-field">
+                  <input
+                    v-model="edgeForm.strokeColor"
+                    type="color"
+                    class="h-11 w-14 rounded-2xl border border-neutral-200 bg-white p-1"
+                  >
+                  <input
+                    v-model.trim="edgeForm.strokeColor"
+                    type="text"
+                    class="input-field"
+                  >
                 </div>
               </label>
+
               <label class="field-label">
                 <span>Style</span>
                 <select v-model="edgeForm.dashMode" class="input-field">
@@ -420,9 +625,14 @@
                 </select>
               </label>
             </div>
+
             <footer class="flex flex-col-reverse gap-2 border-t border-neutral-100 bg-neutral-50 p-5 sm:flex-row sm:justify-end">
-              <button type="button" class="secondary-button" @click="closeEdgeSettings">Batal</button>
-              <button type="button" class="primary-button" @click="applyEdgeSettings">Terapkan</button>
+              <button type="button" class="secondary-button" @click="closeEdgeSettings">
+                Batal
+              </button>
+              <button type="button" class="primary-button" @click="applyEdgeSettings">
+                Terapkan
+              </button>
             </footer>
           </section>
         </div>
@@ -432,21 +642,41 @@
     <!-- Text Modal -->
     <Teleport to="body">
       <Transition name="modal-fade">
-        <div v-if="textEditorOpen" class="fixed inset-0 z-[92] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm" @mousedown.self="closeTextEditor">
+        <div
+          v-if="textEditorOpen"
+          class="fixed inset-0 z-[92] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm"
+          @mousedown.self="closeTextEditor"
+        >
           <section class="w-full max-w-md rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-2xl">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Text</p>
-                <h3 class="mt-1 text-xl font-black text-neutral-950">Edit {{ textFieldLabel }}</h3>
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">
+                  Text
+                </p>
+                <h3 class="mt-1 text-xl font-black text-neutral-950">
+                  Edit {{ textFieldLabel }}
+                </h3>
               </div>
+
               <button type="button" class="modal-close" @click="closeTextEditor">
                 <Icon icon="solar:close-circle-bold-duotone" class="h-5 w-5" />
               </button>
             </div>
-            <input v-model.trim="textForm.value" type="text" class="mt-5 input-field" autofocus>
+
+            <input
+              v-model.trim="textForm.value"
+              type="text"
+              class="mt-5 input-field"
+              autofocus
+            >
+
             <div class="mt-5 flex justify-end gap-2">
-              <button type="button" class="secondary-button" @click="closeTextEditor">Batal</button>
-              <button type="button" class="primary-button" @click="applyTextEdit">Simpan</button>
+              <button type="button" class="secondary-button" @click="closeTextEditor">
+                Batal
+              </button>
+              <button type="button" class="primary-button" @click="applyTextEdit">
+                Simpan
+              </button>
             </div>
           </section>
         </div>
@@ -456,18 +686,31 @@
     <!-- Delete Confirm Modal -->
     <Teleport to="body">
       <Transition name="modal-fade">
-        <div v-if="deleteModal.open" class="fixed inset-0 z-[95] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm" @mousedown.self="deleteModal.open = false">
+        <div
+          v-if="deleteModal.open"
+          class="fixed inset-0 z-[95] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm"
+          @mousedown.self="deleteModal.open = false"
+        >
           <section class="w-full max-w-md rounded-[2rem] border border-neutral-200 bg-white p-5 text-center shadow-2xl">
             <div class="mx-auto grid h-14 w-14 place-items-center rounded-3xl bg-red-50 text-red-600">
               <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-7 w-7" />
             </div>
-            <h3 class="mt-4 text-xl font-black text-neutral-950">Hapus item?</h3>
+
+            <h3 class="mt-4 text-xl font-black text-neutral-950">
+              Hapus item?
+            </h3>
+
             <p class="mt-2 text-sm font-semibold leading-6 text-neutral-500">
               Data akan dihapus dari canvas dan akan tersinkron ke database saat tombol Save ditekan.
             </p>
+
             <div class="mt-5 grid gap-2 sm:grid-cols-2">
-              <button type="button" class="secondary-button" @click="deleteModal.open = false">Batal</button>
-              <button type="button" class="danger-button" @click="confirmDeleteItem">Hapus</button>
+              <button type="button" class="secondary-button" @click="deleteModal.open = false">
+                Batal
+              </button>
+              <button type="button" class="danger-button" @click="confirmDeleteItem">
+                Hapus
+              </button>
             </div>
           </section>
         </div>
@@ -476,16 +719,35 @@
 
     <!-- Toast -->
     <Transition name="toast">
-      <div v-if="toast.show" class="fixed bottom-5 right-5 z-[110] w-[min(420px,calc(100vw-2rem))] rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-2xl shadow-neutral-950/15">
+      <div
+        v-if="toast.show"
+        class="fixed bottom-5 right-5 z-[110] w-[min(420px,calc(100vw-2rem))] rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-2xl shadow-neutral-950/15"
+      >
         <div class="flex items-start gap-3">
-          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl" :class="toast.type === 'success' ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'">
-            <Icon :icon="toast.type === 'success' ? 'solar:check-circle-bold-duotone' : 'solar:danger-circle-bold-duotone'" class="h-6 w-6" />
+          <div
+            class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl"
+            :class="toast.type === 'success' ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'"
+          >
+            <Icon
+              :icon="toast.type === 'success' ? 'solar:check-circle-bold-duotone' : 'solar:danger-circle-bold-duotone'"
+              class="h-6 w-6"
+            />
           </div>
+
           <div class="min-w-0 flex-1">
-            <p class="font-black text-neutral-950">{{ toast.title }}</p>
-            <p class="mt-1 text-sm font-semibold leading-6 text-neutral-500">{{ toast.message }}</p>
+            <p class="font-black text-neutral-950">
+              {{ toast.title }}
+            </p>
+            <p class="mt-1 text-sm font-semibold leading-6 text-neutral-500">
+              {{ toast.message }}
+            </p>
           </div>
-          <button type="button" class="grid h-8 w-8 place-items-center rounded-xl text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700" @click="closeToast">
+
+          <button
+            type="button"
+            class="grid h-8 w-8 place-items-center rounded-xl text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700"
+            @click="closeToast"
+          >
             <Icon icon="solar:close-circle-bold-duotone" class="h-5 w-5" />
           </button>
         </div>
@@ -509,7 +771,15 @@ definePageMeta({
 })
 
 type ToolType = 'select' | 'block' | 'line' | 'text'
-type AnchorKey = 'top' | 'bottom' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight'
+type AnchorKey =
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'topLeft'
+  | 'topRight'
+  | 'bottomLeft'
+  | 'bottomRight'
 type ToastType = 'success' | 'error'
 type DeleteKind = 'node' | 'edge'
 
@@ -563,7 +833,7 @@ type DiagramEdge = {
   targetAnchor: AnchorKey
   edgeType: string
   label: string
-  lineType: 'orthogonal' | 'straight' | 'bezier'
+  lineType: 'orthogonal' | 'straight' | 'bezier' | 'manual'
   strokeColor: string
   strokeWidth: number
   strokeDash: number[]
@@ -572,6 +842,24 @@ type DiagramEdge = {
   metadata: Record<string, any>
   konvaConfig: Record<string, any>
   sortOrder: number
+}
+
+type EdgeControlHandle = {
+  id: string
+  edgeId: string
+  pointIndex: number
+  x: number
+  y: number
+}
+
+type CanvasPoint = {
+  x: number
+  y: number
+}
+
+type ClipboardPayload = {
+  type: 'arsades-structure-node'
+  node: DiagramNode
 }
 
 type ChartState = {
@@ -613,6 +901,8 @@ const hasUnsavedChanges = ref(false)
 
 const selectedNodeId = ref('')
 const selectedEdgeId = ref('')
+const copiedNodeSnapshot = ref<DiagramNode | null>(null)
+const pastedNodeOffset = ref(0)
 const hoveredNodeId = ref('')
 const stageScale = ref(1)
 const stageX = ref(0)
@@ -629,12 +919,18 @@ const imageCache = ref<Record<string, HTMLImageElement>>({})
 const lineSource = ref<null | { nodeId: string; anchor: AnchorKey }>(null)
 const tempLine = ref<null | { sourceNodeId: string; sourceAnchor: AnchorKey; x: number; y: number }>(null)
 
-const contextMenu = reactive({
-  show: false,
+const toolMenuVisible = ref(true)
+const toolMenuHover = ref(false)
+const toolMenuContextMode = ref(false)
+const toolMenuX = ref(0)
+const toolMenuY = ref(0)
+
+let toolMenuTimer: ReturnType<typeof setTimeout> | null = null
+
+const actionModal = reactive({
+  open: false,
   kind: 'node' as DeleteKind,
-  targetId: '',
-  x: 0,
-  y: 0
+  targetId: ''
 })
 
 const deleteModal = reactive({
@@ -686,7 +982,7 @@ const nodeForm = reactive({
 
 const edgeForm = reactive({
   label: '',
-  lineType: 'orthogonal' as 'orthogonal' | 'straight' | 'bezier',
+  lineType: 'orthogonal' as 'orthogonal' | 'straight' | 'bezier' | 'manual',
   strokeColor: '#94a3b8',
   strokeWidth: 2,
   dashMode: 'solid' as 'solid' | 'dashed' | 'dotted'
@@ -713,6 +1009,7 @@ const tools = [
 
 const hostname = computed(() => String(requestUrl.hostname || '').replace(/^www\./, '').toLowerCase())
 const envClientName = computed(() => String(runtime.public.clientName || 'martopuro').trim().toLowerCase())
+
 const tenantSlug = computed(() => {
   if (hostname.value.includes('martopuro')) return 'martopuro'
   if (hostname.value.includes('obayan')) return 'obayan'
@@ -722,10 +1019,28 @@ const tenantSlug = computed(() => {
 const chartBaseUrl = computed(() => tenantApiUrl(tenantSlug.value, '/structure-organizations/charts'))
 const chartUrl = computed(() => chart.id ? `${chartBaseUrl.value}/${chart.id}` : '')
 
-const activeToolLabel = computed(() => tools.find((item) => item.value === activeTool.value)?.label || 'Select')
-const selectedNode = computed(() => nodes.value.find((item) => item.id === selectedNodeId.value) || null)
-const selectedEdge = computed(() => edges.value.find((item) => item.id === selectedEdgeId.value) || null)
-const textFieldLabel = computed(() => textFormField.value === 'name' ? 'Nama' : 'Jabatan')
+const activeToolLabel = computed(() => {
+  return tools.find((item) => item.value === activeTool.value)?.label || 'Select'
+})
+
+const textFieldLabel = computed(() => {
+  return textFormField.value === 'name' ? 'Nama' : 'Jabatan'
+})
+
+const toolMenuStyle = computed(() => {
+  if (toolMenuContextMode.value) {
+    return {
+      left: `${toolMenuX.value}px`,
+      top: `${toolMenuY.value}px`
+    }
+  }
+
+  return {
+    right: '1rem',
+    top: '50%',
+    transform: 'translateY(-50%)'
+  }
+})
 
 const stageConfig = computed(() => ({
   width: stageWidth.value,
@@ -774,8 +1089,10 @@ const gridLines = computed(() => {
 
 const tempLineConfig = computed(() => {
   if (!tempLine.value) return {}
+
   const source = nodes.value.find((item) => item.id === tempLine.value?.sourceNodeId)
   if (!source) return {}
+
   const from = anchorPoint(source, tempLine.value.sourceAnchor)
   const to = { x: tempLine.value.x, y: tempLine.value.y }
 
@@ -788,6 +1105,36 @@ const tempLineConfig = computed(() => {
     lineJoin: 'round',
     listening: false
   }
+})
+
+const selectedEdgeHandles = computed<EdgeControlHandle[]>(() => {
+  const edge = edges.value.find((item) => item.id === selectedEdgeId.value)
+  if (!edge) return []
+
+  const points = edgePointsAsObjects(edge)
+
+  if (points.length <= 2) {
+    const endpoints = edgeEndpointPoints(edge)
+    if (!endpoints) return []
+
+    return [
+      {
+        id: `${edge.id}-mid`,
+        edgeId: edge.id,
+        pointIndex: 1,
+        x: (endpoints.from.x + endpoints.to.x) / 2,
+        y: (endpoints.from.y + endpoints.to.y) / 2
+      }
+    ]
+  }
+
+  return points.slice(1, -1).map((point, index) => ({
+    id: `${edge.id}-${index + 1}`,
+    edgeId: edge.id,
+    pointIndex: index + 1,
+    x: point.x,
+    y: point.y
+  }))
 })
 
 watch(nodes, () => {
@@ -803,23 +1150,174 @@ watch(activeTool, (value) => {
   if (value === 'line') setStageCursor('crosshair')
   else if (value === 'text') setStageCursor('text')
   else setStageCursor('default')
+
+  showToolMenu()
 })
 
 onMounted(() => {
   updateStageSize()
   window.addEventListener('resize', updateStageSize)
+  window.addEventListener('keydown', onGlobalKeydown)
+  showToolMenu()
   loadInitialChart()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateStageSize)
+  window.removeEventListener('keydown', onGlobalKeydown)
+
   if (toastTimer) clearTimeout(toastTimer)
+  if (toolMenuTimer) clearTimeout(toolMenuTimer)
 })
 
 function updateStageSize() {
   const rect = stageShell.value?.getBoundingClientRect()
   stageWidth.value = Math.max(600, Math.floor(rect?.width || 1200))
   stageHeight.value = Math.max(520, Math.floor(rect?.height || 760))
+}
+
+function onGlobalKeydown(event: KeyboardEvent) {
+  if (isTypingTarget(event.target)) return
+
+  const key = String(event.key || '').toLowerCase()
+  const commandPressed = hasShortcutModifier(event)
+
+  if (commandPressed && key === 'c') {
+    if (!selectedNodeId.value) return
+
+    event.preventDefault()
+    copySelectedNodeToClipboard()
+    return
+  }
+
+  if (commandPressed && key === 'v') {
+    event.preventDefault()
+    void pasteNodeFromClipboard()
+    return
+  }
+
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    cancelAllActions()
+    return
+  }
+
+  if (event.key === 'Delete' || event.key === 'Backspace') {
+    if (!selectedNodeId.value && !selectedEdgeId.value) return
+
+    event.preventDefault()
+    deleteSelectedItem()
+  }
+}
+
+function isTypingTarget(target: EventTarget | null) {
+  const element = target as HTMLElement | null
+  if (!element) return false
+
+  const tagName = element.tagName?.toLowerCase()
+
+  return (
+    tagName === 'input' ||
+    tagName === 'textarea' ||
+    tagName === 'select' ||
+    element.isContentEditable
+  )
+}
+
+function hasShortcutModifier(event: KeyboardEvent) {
+  return event.ctrlKey || event.metaKey || safeModifierState(event, 'Fn')
+}
+
+function safeModifierState(event: KeyboardEvent, key: string) {
+  try {
+    return typeof event.getModifierState === 'function' && event.getModifierState(key)
+  } catch {
+    return false
+  }
+}
+
+function deleteSelectedItem() {
+  if (
+    nodeSettingsOpen.value ||
+    edgeSettingsOpen.value ||
+    textEditorOpen.value ||
+    deleteModal.open ||
+    actionModal.open
+  ) {
+    return
+  }
+
+  if (selectedNodeId.value) {
+    requestDelete('node', selectedNodeId.value)
+    return
+  }
+
+  if (selectedEdgeId.value) {
+    requestDelete('edge', selectedEdgeId.value)
+  }
+}
+
+function cancelAllActions() {
+  activeTool.value = 'select'
+  lineSource.value = null
+  tempLine.value = null
+  actionModal.open = false
+  exportMenuOpen.value = false
+  toolMenuContextMode.value = false
+  selectedEdgeId.value = ''
+  selectedNodeId.value = ''
+  hoveredNodeId.value = ''
+
+  if (textEditorOpen.value) textEditorOpen.value = false
+  else if (nodeSettingsOpen.value) nodeSettingsOpen.value = false
+  else if (edgeSettingsOpen.value) edgeSettingsOpen.value = false
+  else if (deleteModal.open) deleteModal.open = false
+
+  setStageCursor('default')
+  showToolMenu()
+}
+
+function handlePointerActivity() {
+  showToolMenu()
+}
+
+function showToolMenu() {
+  toolMenuVisible.value = true
+
+  if (toolMenuTimer) clearTimeout(toolMenuTimer)
+
+  if (activeTool.value !== 'select' || toolMenuHover.value) return
+
+  toolMenuTimer = setTimeout(() => {
+    if (!toolMenuHover.value && activeTool.value === 'select') {
+      toolMenuVisible.value = false
+      toolMenuContextMode.value = false
+    }
+  }, 5000)
+}
+
+function onToolMenuLeave() {
+  toolMenuHover.value = false
+  showToolMenu()
+}
+
+function openCanvasToolMenu(event: MouseEvent) {
+  closeFloatingMenus()
+
+  toolMenuContextMode.value = true
+  toolMenuX.value = clamp(event.clientX, 12, window.innerWidth - 80)
+  toolMenuY.value = clamp(event.clientY, 12, window.innerHeight - 180)
+  toolMenuVisible.value = true
+  showToolMenu()
+}
+
+function onKonvaStageContextMenu(event: any) {
+  event.evt.preventDefault()
+
+  const stage = stageRef.value?.getStage?.()
+  if (event.target !== stage) return
+
+  openCanvasToolMenu(event.evt)
 }
 
 async function loadInitialChart() {
@@ -864,6 +1362,7 @@ function resetLocalDiagram() {
   chart.slug = 'struktur-organisasi'
   chart.description = 'Bagan struktur organisasi tenant.'
   chart.status = 'published'
+
   nodes.value = []
   edges.value = []
   deletedNodeIds.value = []
@@ -901,6 +1400,7 @@ function hydrateFromResponse(data: any) {
   deletedEdgeIds.value = []
   selectedNodeId.value = ''
   selectedEdgeId.value = ''
+
   loadNodeImages()
 }
 
@@ -984,6 +1484,8 @@ function handleToolClick(tool: ToolType) {
     createNodeAt(center.x - 120, center.y - 62)
     activeTool.value = 'select'
   }
+
+  showToolMenu()
 }
 
 function onToolDragStart(event: DragEvent, tool: ToolType) {
@@ -1207,6 +1709,7 @@ const ellipsisTextConfig = {
 
 function handleConfig(node: DiagramNode, anchor: AnchorKey) {
   const point = localAnchorPoint(node, anchor)
+
   return {
     x: point.x,
     y: point.y,
@@ -1222,7 +1725,17 @@ function handleConfig(node: DiagramNode, anchor: AnchorKey) {
 
 function visibleHandles(node: DiagramNode) {
   if (!isNodeActive(node.id) && activeTool.value !== 'line') return []
-  return ['top', 'bottom', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight'] as AnchorKey[]
+
+  return [
+    'top',
+    'bottom',
+    'left',
+    'right',
+    'topLeft',
+    'topRight',
+    'bottomLeft',
+    'bottomRight'
+  ] as AnchorKey[]
 }
 
 function isNodeActive(id: string) {
@@ -1230,21 +1743,14 @@ function isNodeActive(id: string) {
 }
 
 function edgeKonvaConfig(edge: DiagramEdge) {
-  const source = nodes.value.find((item) => item.id === edge.sourceNodeId)
-  const target = nodes.value.find((item) => item.id === edge.targetNodeId)
+  const points = edgePointsArray(edge)
 
-  if (!source || !target) {
+  if (!points.length) {
     return {
       points: [],
       visible: false
     }
   }
-
-  const from = anchorPoint(source, edge.sourceAnchor)
-  const to = anchorPoint(target, edge.targetAnchor)
-  const points = edge.lineType === 'straight'
-    ? [from.x, from.y, to.x, to.y]
-    : orthogonalPoints(from, to)
 
   return {
     points,
@@ -1254,9 +1760,196 @@ function edgeKonvaConfig(edge: DiagramEdge) {
     lineCap: 'round',
     lineJoin: 'round',
     tension: edge.lineType === 'bezier' ? 0.45 : 0,
-    hitStrokeWidth: 18,
+    hitStrokeWidth: 22,
     shadowColor: 'rgba(37,99,235,0.18)',
     shadowBlur: selectedEdgeId.value === edge.id ? 10 : 0
+  }
+}
+
+function edgeControlGroupConfig(handle: EdgeControlHandle) {
+  return {
+    x: handle.x,
+    y: handle.y,
+    draggable: true
+  }
+}
+
+function edgeControlOuterConfig(handle: EdgeControlHandle) {
+  return {
+    x: 0,
+    y: 0,
+    radius: 11,
+    fill: '#ffffff',
+    stroke: '#2563eb',
+    strokeWidth: 2,
+    shadowColor: 'rgba(37,99,235,0.28)',
+    shadowBlur: 12,
+    shadowOffsetY: 4,
+    hitStrokeWidth: 18,
+    listening: true
+  }
+}
+
+function edgeControlInnerConfig(handle: EdgeControlHandle) {
+  return {
+    x: 0,
+    y: 0,
+    radius: 4,
+    fill: '#2563eb',
+    listening: false
+  }
+}
+
+function onEdgeControlDragStart(event: any, handle: EdgeControlHandle) {
+  event.cancelBubble = true
+  selectedEdgeId.value = handle.edgeId
+  selectedNodeId.value = ''
+  setStageCursor('grabbing')
+}
+
+function onEdgeControlDragMove(event: any, handle: EdgeControlHandle) {
+  event.cancelBubble = true
+
+  const edge = edges.value.find((item) => item.id === handle.edgeId)
+  if (!edge) return
+
+  const position = event.target.position()
+  applyEdgeManualPoint(edge, handle.pointIndex, {
+    x: round(position.x),
+    y: round(position.y)
+  })
+}
+
+function onEdgeControlDragEnd(event: any, handle: EdgeControlHandle) {
+  event.cancelBubble = true
+
+  const edge = edges.value.find((item) => item.id === handle.edgeId)
+  if (!edge) return
+
+  const position = event.target.position()
+  applyEdgeManualPoint(edge, handle.pointIndex, {
+    x: round(position.x),
+    y: round(position.y)
+  })
+
+  setStageCursor('grab')
+}
+
+function applyEdgeManualPoint(edge: DiagramEdge, pointIndex: number, point: CanvasPoint) {
+  const endpoints = edgeEndpointPoints(edge)
+  if (!endpoints) return
+
+  let points = edgePointsAsObjects(edge)
+
+  if (points.length <= 2) {
+    points = [endpoints.from, point, endpoints.to]
+  }
+
+  const safeIndex = clamp(pointIndex, 1, Math.max(1, points.length - 2))
+
+  points = points.map((item, index) => {
+    if (index === 0) return endpoints.from
+    if (index === points.length - 1) return endpoints.to
+    if (index === safeIndex) return point
+    return item
+  })
+
+  edge.lineType = 'manual'
+  edge.metadata = {
+    ...edge.metadata,
+    sourceAnchor: edge.sourceAnchor,
+    targetAnchor: edge.targetAnchor,
+    manualPoints: points
+  }
+}
+
+function edgeEndpointPoints(edge: DiagramEdge) {
+  const source = nodes.value.find((item) => item.id === edge.sourceNodeId)
+  const target = nodes.value.find((item) => item.id === edge.targetNodeId)
+
+  if (!source || !target) return null
+
+  return {
+    from: anchorPoint(source, edge.sourceAnchor),
+    to: anchorPoint(target, edge.targetAnchor)
+  }
+}
+
+function edgePointsArray(edge: DiagramEdge) {
+  return edgePointsAsObjects(edge).flatMap((point) => [point.x, point.y])
+}
+
+function edgePointsAsObjects(edge: DiagramEdge): CanvasPoint[] {
+  const endpoints = edgeEndpointPoints(edge)
+  if (!endpoints) return []
+
+  const { from, to } = endpoints
+
+  if (edge.lineType === 'manual') {
+    const manualPoints = normalizePointArray(edge.metadata?.manualPoints)
+
+    if (manualPoints.length >= 2) {
+      return [
+        from,
+        ...manualPoints.slice(1, -1),
+        to
+      ]
+    }
+
+    return [from, midpoint(from, to), to]
+  }
+
+  if (edge.lineType === 'straight') {
+    return [from, to]
+  }
+
+  if (edge.lineType === 'bezier') {
+    const controlPoint = normalizePoint(edge.metadata?.controlPoint) || {
+      x: (from.x + to.x) / 2,
+      y: (from.y + to.y) / 2 - Math.max(70, Math.abs(to.x - from.x) * 0.16)
+    }
+
+    return [from, controlPoint, to]
+  }
+
+  return pointArrayToObjects(orthogonalPoints(from, to))
+}
+
+function pointArrayToObjects(points: number[]) {
+  const result: CanvasPoint[] = []
+
+  for (let index = 0; index < points.length; index += 2) {
+    result.push({
+      x: numberValue(points[index], 0),
+      y: numberValue(points[index + 1], 0)
+    })
+  }
+
+  return result
+}
+
+function normalizePoint(value: unknown): CanvasPoint | null {
+  const item = value as Record<string, unknown>
+  const x = Number(item?.x)
+  const y = Number(item?.y)
+
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+
+  return { x, y }
+}
+
+function normalizePointArray(value: unknown): CanvasPoint[] {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .map((item) => normalizePoint(item))
+    .filter(Boolean) as CanvasPoint[]
+}
+
+function midpoint(from: CanvasPoint, to: CanvasPoint): CanvasPoint {
+  return {
+    x: (from.x + to.x) / 2,
+    y: (from.y + to.y) / 2
   }
 }
 
@@ -1292,7 +1985,7 @@ function onNodeClick(event: any, node: DiagramNode) {
   closeFloatingMenus()
 
   if (activeTool.value === 'text') {
-    openTextEditor(node, 'name')
+    openTextEditor(event, node, 'name')
     return
   }
 
@@ -1314,21 +2007,38 @@ function onNodeClick(event: any, node: DiagramNode) {
 
   selectedNodeId.value = node.id
   selectedEdgeId.value = ''
+  actionModal.open = false
+}
+
+function openNodeSettingsFromGroup(event: any, node: DiagramNode) {
+  event.cancelBubble = true
+
+  if (textEditorOpen.value) return
+
+  closeEdgeSettings()
+  closeTextEditor()
+  openNodeSettings(node)
 }
 
 function onStageClick(event: any) {
   const target = event.target
   const stage = stageRef.value?.getStage?.()
+
   if (target === stage) {
     selectedNodeId.value = ''
     selectedEdgeId.value = ''
-    if (activeTool.value !== 'line' && activeTool.value !== 'text') activeTool.value = 'select'
+
+    if (activeTool.value !== 'line' && activeTool.value !== 'text') {
+      activeTool.value = 'select'
+    }
+
     closeFloatingMenus()
   }
 }
 
 function onStageMouseDown(event: any) {
   const stage = stageRef.value?.getStage?.()
+
   if (event.target === stage && activeTool.value === 'select') {
     selectedNodeId.value = ''
     selectedEdgeId.value = ''
@@ -1336,9 +2046,13 @@ function onStageMouseDown(event: any) {
 }
 
 function onStageMouseMove() {
+  showToolMenu()
+
   if (!tempLine.value) return
+
   const pointer = stageRef.value?.getStage?.().getPointerPosition()
   if (!pointer) return
+
   const point = screenToCanvas(pointer.x, pointer.y)
   tempLine.value.x = point.x
   tempLine.value.y = point.y
@@ -1352,15 +2066,18 @@ function onStageMouseUp() {
 
 function onWheel(event: any) {
   event.evt.preventDefault()
+
   const stage = stageRef.value?.getStage?.()
   const oldScale = stageScale.value
   const pointer = stage?.getPointerPosition()
+
   if (!pointer) return
 
   const scaleBy = 1.06
   const direction = event.evt.deltaY > 0 ? -1 : 1
   const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy
   const clampedScale = Math.max(0.25, Math.min(2.5, newScale))
+
   const mousePointTo = {
     x: (pointer.x - stageX.value) / oldScale,
     y: (pointer.y - stageY.value) / oldScale
@@ -1379,28 +2096,38 @@ function resetView() {
 
 function startLineFromHandle(event: any, node: DiagramNode, anchor: AnchorKey) {
   event.cancelBubble = true
+
   lineSource.value = { nodeId: node.id, anchor }
+
   const point = anchorPoint(node, anchor)
+
   tempLine.value = {
     sourceNodeId: node.id,
     sourceAnchor: anchor,
     x: point.x,
     y: point.y
   }
+
   activeTool.value = 'line'
 }
 
 function finishLineToHandle(event: any, node: DiagramNode, anchor: AnchorKey) {
   event.cancelBubble = true
+
   if (!lineSource.value || lineSource.value.nodeId === node.id) return
+
   createEdge(lineSource.value.nodeId, node.id, lineSource.value.anchor, anchor)
+
   lineSource.value = null
   tempLine.value = null
   activeTool.value = 'select'
 }
 
 function createEdge(sourceNodeId: string, targetNodeId: string, sourceAnchor: AnchorKey, targetAnchor: AnchorKey) {
-  const exists = edges.value.some((edge) => edge.sourceNodeId === sourceNodeId && edge.targetNodeId === targetNodeId)
+  const exists = edges.value.some((edge) => {
+    return edge.sourceNodeId === sourceNodeId && edge.targetNodeId === targetNodeId
+  })
+
   if (exists) {
     showToast('error', 'Line sudah ada', 'Relasi antar block tersebut sudah dibuat.')
     return
@@ -1429,46 +2156,105 @@ function createEdge(sourceNodeId: string, targetNodeId: string, sourceAnchor: An
   showToast('success', 'Line dibuat', 'Garis relasi otomatis tersambung ke block tujuan.')
 }
 
-function selectEdge(id: string) {
-  selectedEdgeId.value = id
-  selectedNodeId.value = ''
-}
-
 function openNodeContextMenu(event: any, node: DiagramNode) {
   event.evt.preventDefault()
   event.cancelBubble = true
-  openContextMenu('node', node.id, event.evt.clientX, event.evt.clientY)
+
+  selectedNodeId.value = node.id
+  selectedEdgeId.value = ''
+
+  openActionModal('node', node.id)
 }
 
 function openEdgeContextMenu(event: any, edge: DiagramEdge) {
   event.evt.preventDefault()
   event.cancelBubble = true
-  openContextMenu('edge', edge.id, event.evt.clientX, event.evt.clientY)
+
+  selectedEdgeId.value = edge.id
+  selectedNodeId.value = ''
+
+  openActionModal('edge', edge.id)
 }
 
 function openNodeMenuFromCanvas(event: any, node: DiagramNode) {
   event.cancelBubble = true
-  const pointer = stageRef.value?.getStage?.().getPointerPosition()
-  const rect = stageShell.value?.getBoundingClientRect()
-  openContextMenu(
-    'node',
-    node.id,
-    Number(rect?.left || 0) + Number(pointer?.x || 0) + 12,
-    Number(rect?.top || 0) + Number(pointer?.y || 0) + 12
-  )
+
+  selectedNodeId.value = node.id
+  selectedEdgeId.value = ''
+
+  openActionModal('node', node.id)
 }
 
-function openContextMenu(kind: DeleteKind, targetId: string, x: number, y: number) {
-  contextMenu.show = true
-  contextMenu.kind = kind
-  contextMenu.targetId = targetId
-  contextMenu.x = Math.min(window.innerWidth - 230, x)
-  contextMenu.y = Math.min(window.innerHeight - 160, y)
+function openActionModal(kind: DeleteKind, targetId: string) {
+  closeFloatingMenus()
+  closeNodeSettings()
+  closeEdgeSettings()
+  closeTextEditor()
+
+  actionModal.kind = kind
+  actionModal.targetId = targetId
+  actionModal.open = true
+}
+
+function closeActionModal() {
+  actionModal.open = false
+}
+
+function openSelectedSettings() {
+  const { kind, targetId } = actionModal
+
+  actionModal.open = false
+
+  if (kind === 'node') {
+    openNodeSettingsById(targetId)
+    return
+  }
+
+  openEdgeSettingsById(targetId)
+}
+
+function duplicateSelectedNode() {
+  if (actionModal.kind !== 'node') return
+
+  const targetId = actionModal.targetId
+  actionModal.open = false
+  duplicateNodeById(targetId)
+}
+
+function deleteSelectedFromActionModal() {
+  const { kind, targetId } = actionModal
+
+  actionModal.open = false
+  requestDelete(kind, targetId)
+}
+
+function selectEdge(event: any, id: string) {
+  event.cancelBubble = true
+
+  selectedEdgeId.value = id
+  selectedNodeId.value = ''
+  actionModal.open = false
+}
+
+function openEdgeSettingsFromCanvas(event: any, edge: DiagramEdge) {
+  event.cancelBubble = true
+  selectedEdgeId.value = edge.id
+  selectedNodeId.value = ''
+  openEdgeSettingsById(edge.id)
 }
 
 function closeFloatingMenus() {
-  contextMenu.show = false
   exportMenuOpen.value = false
+  actionModal.open = false
+}
+
+function closeToolContextMode() {
+  toolMenuContextMode.value = false
+}
+
+function toggleExportMenu() {
+  exportMenuOpen.value = !exportMenuOpen.value
+  actionModal.open = false
 }
 
 function openNodeSettingsById(id: string) {
@@ -1478,6 +2264,9 @@ function openNodeSettingsById(id: string) {
 
 function openNodeSettings(node: DiagramNode) {
   closeFloatingMenus()
+  closeTextEditor()
+  closeEdgeSettings()
+
   nodeFormId.value = node.id
   nodeForm.photoUrl = node.photoUrl
   nodeForm.name = node.name
@@ -1532,6 +2321,9 @@ function openEdgeSettingsById(id: string) {
   if (!edge) return
 
   closeFloatingMenus()
+  closeTextEditor()
+  closeNodeSettings()
+
   edgeFormId.value = edge.id
   edgeForm.label = edge.label
   edgeForm.lineType = edge.lineType
@@ -1549,15 +2341,53 @@ function applyEdgeSettings() {
   const edge = edges.value.find((item) => item.id === edgeFormId.value)
   if (!edge) return
 
+  const nextLineType = edgeForm.lineType
+  const existingPoints = edgePointsAsObjects(edge)
+
   edge.label = edgeForm.label
-  edge.lineType = edgeForm.lineType
+  edge.lineType = nextLineType
   edge.strokeColor = edgeForm.strokeColor || '#94a3b8'
   edge.strokeWidth = numberValue(edgeForm.strokeWidth, 2)
   edge.strokeDash = dashArrayFromMode(edgeForm.dashMode)
+
+  if (nextLineType === 'manual') {
+    edge.metadata = {
+      ...edge.metadata,
+      sourceAnchor: edge.sourceAnchor,
+      targetAnchor: edge.targetAnchor,
+      manualPoints: existingPoints.length >= 2 ? existingPoints : edgePointsAsObjects(edge)
+    }
+  } else if (nextLineType === 'bezier') {
+    const endpoints = edgeEndpointPoints(edge)
+    const currentControl = existingPoints.length > 2 ? existingPoints[Math.floor(existingPoints.length / 2)] : null
+
+    edge.metadata = {
+      ...edge.metadata,
+      sourceAnchor: edge.sourceAnchor,
+      targetAnchor: edge.targetAnchor,
+      controlPoint: currentControl || (endpoints ? midpoint(endpoints.from, endpoints.to) : undefined),
+      manualPoints: undefined
+    }
+  } else {
+    edge.metadata = {
+      ...edge.metadata,
+      sourceAnchor: edge.sourceAnchor,
+      targetAnchor: edge.targetAnchor,
+      manualPoints: undefined,
+      controlPoint: undefined
+    }
+  }
+
   closeEdgeSettings()
 }
 
-function openTextEditor(node: DiagramNode, field: 'name' | 'positionTitle') {
+function openTextEditor(event: any, node: DiagramNode, field: 'name' | 'positionTitle') {
+  event.cancelBubble = true
+
+  closeFloatingMenus()
+  closeNodeSettings()
+  closeEdgeSettings()
+
   textFormNodeId.value = node.id
   textFormField.value = field
   textForm.value = node[field]
@@ -1573,11 +2403,21 @@ function applyTextEdit() {
   if (!node) return
 
   node[textFormField.value] = textForm.value || (textFormField.value === 'name' ? 'Nama' : 'Jabatan')
-  if (textFormField.value === 'name') node.slug = cleanSlug(node.name)
+
+  if (textFormField.value === 'name') {
+    node.slug = cleanSlug(node.name)
+  }
+
   closeTextEditor()
 }
 
-function openPhotoPicker(node: DiagramNode) {
+function openPhotoPicker(event: any, node: DiagramNode) {
+  event.cancelBubble = true
+
+  closeTextEditor()
+  closeNodeSettings()
+  closeEdgeSettings()
+
   pendingPhotoNodeId.value = node.id
   photoInput.value?.click()
 }
@@ -1590,10 +2430,12 @@ function triggerNodeFormPhoto() {
 async function onPickPhoto(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
+
   if (!file || !pendingPhotoNodeId.value) return
 
   try {
     validateImage(file)
+
     const method = uploader.uploadImage || uploader.uploadFile
     if (typeof method !== 'function') throw new Error('Fitur upload belum tersedia.')
 
@@ -1609,6 +2451,7 @@ async function onPickPhoto(event: Event) {
     if (!url) throw new Error('URL hasil upload tidak ditemukan.')
 
     const node = nodes.value.find((item) => item.id === pendingPhotoNodeId.value)
+
     if (node) node.photoUrl = url
     if (nodeFormId.value === pendingPhotoNodeId.value) nodeForm.photoUrl = url
 
@@ -1622,20 +2465,92 @@ async function onPickPhoto(event: Event) {
   }
 }
 
+function copySelectedNodeToClipboard() {
+  const node = nodes.value.find((item) => item.id === selectedNodeId.value)
+  if (!node) return
+
+  pastedNodeOffset.value = 0
+  copiedNodeSnapshot.value = cloneNodeSnapshot(node)
+
+  const payload: ClipboardPayload = {
+    type: 'arsades-structure-node',
+    node: copiedNodeSnapshot.value
+  }
+
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(JSON.stringify(payload)).catch(() => undefined)
+  }
+
+  showToast('success', 'Block disalin', 'Nama, jabatan, foto, ukuran, warna, dan parameter block ikut tersalin.')
+}
+
+async function pasteNodeFromClipboard() {
+  let snapshot = copiedNodeSnapshot.value
+
+  if (!snapshot && typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
+    try {
+      const text = await navigator.clipboard.readText()
+      const payload = JSON.parse(text) as ClipboardPayload
+
+      if (payload?.type === 'arsades-structure-node' && payload.node) {
+        snapshot = cloneNodeSnapshot(payload.node)
+      }
+    } catch {
+      snapshot = null
+    }
+  }
+
+  if (!snapshot) {
+    showToast('error', 'Belum ada block', 'Pilih block lalu tekan Ctrl/Cmd+C terlebih dahulu.')
+    return
+  }
+
+  pastedNodeOffset.value += 28
+
+  const pastedNode = createPastedNode(snapshot, pastedNodeOffset.value)
+  nodes.value.push(pastedNode)
+  selectedNodeId.value = pastedNode.id
+  selectedEdgeId.value = ''
+
+  showToast('success', 'Block ditempel', 'Block baru memakai nama, jabatan, URL foto, dan parameter yang sama.')
+}
+
+function cloneNodeSnapshot(node: DiagramNode): DiagramNode {
+  return deepClone({
+    ...node,
+    persisted: false,
+    metadata: deepClone(node.metadata),
+    konvaConfig: deepClone(node.konvaConfig),
+    styleConfig: deepClone(node.styleConfig)
+  })
+}
+
+function createPastedNode(snapshot: DiagramNode, offset: number): DiagramNode {
+  const id = uid()
+
+  return {
+    ...deepClone(snapshot),
+    id,
+    persisted: false,
+    parentId: snapshot.parentId || null,
+    name: snapshot.name || 'Nama',
+    slug: cleanSlug(snapshot.slug || snapshot.name || id),
+    positionTitle: snapshot.positionTitle || 'Jabatan',
+    photoUrl: snapshot.photoUrl || '',
+    x: round(snapshot.x + offset),
+    y: round(snapshot.y + offset),
+    metadata: deepClone(snapshot.metadata),
+    konvaConfig: deepClone(snapshot.konvaConfig),
+    styleConfig: deepClone(snapshot.styleConfig),
+    sortOrder: nodes.value.length + 1
+  }
+}
+
 function duplicateNodeById(id: string) {
   const node = nodes.value.find((item) => item.id === id)
   if (!node) return
 
-  const copied: DiagramNode = {
-    ...node,
-    id: uid(),
-    persisted: false,
-    name: `${node.name} Copy`,
-    slug: `${node.slug}-copy`,
-    x: node.x + 32,
-    y: node.y + 32,
-    sortOrder: nodes.value.length + 1
-  }
+  const copied = createPastedNode(cloneNodeSnapshot(node), 32)
 
   nodes.value.push(copied)
   selectedNodeId.value = copied.id
@@ -1652,23 +2567,41 @@ function requestDelete(kind: DeleteKind, targetId: string) {
 function confirmDeleteItem() {
   if (deleteModal.kind === 'node') {
     const node = nodes.value.find((item) => item.id === deleteModal.targetId)
-    if (node?.persisted) deletedNodeIds.value.push(node.id)
 
-    const removedEdges = edges.value.filter((edge) => edge.sourceNodeId === deleteModal.targetId || edge.targetNodeId === deleteModal.targetId)
+    if (node?.persisted) {
+      deletedNodeIds.value.push(node.id)
+    }
+
+    const removedEdges = edges.value.filter((edge) => {
+      return edge.sourceNodeId === deleteModal.targetId || edge.targetNodeId === deleteModal.targetId
+    })
+
     for (const edge of removedEdges) {
       if (edge.persisted) deletedEdgeIds.value.push(edge.id)
     }
 
     nodes.value = nodes.value.filter((item) => item.id !== deleteModal.targetId)
-    edges.value = edges.value.filter((edge) => edge.sourceNodeId !== deleteModal.targetId && edge.targetNodeId !== deleteModal.targetId)
-    if (selectedNodeId.value === deleteModal.targetId) selectedNodeId.value = ''
+    edges.value = edges.value.filter((edge) => {
+      return edge.sourceNodeId !== deleteModal.targetId && edge.targetNodeId !== deleteModal.targetId
+    })
+
+    if (selectedNodeId.value === deleteModal.targetId) {
+      selectedNodeId.value = ''
+    }
   }
 
   if (deleteModal.kind === 'edge') {
     const edge = edges.value.find((item) => item.id === deleteModal.targetId)
-    if (edge?.persisted) deletedEdgeIds.value.push(edge.id)
+
+    if (edge?.persisted) {
+      deletedEdgeIds.value.push(edge.id)
+    }
+
     edges.value = edges.value.filter((item) => item.id !== deleteModal.targetId)
-    if (selectedEdgeId.value === deleteModal.targetId) selectedEdgeId.value = ''
+
+    if (selectedEdgeId.value === deleteModal.targetId) {
+      selectedEdgeId.value = ''
+    }
   }
 
   deleteModal.open = false
@@ -1677,6 +2610,7 @@ function confirmDeleteItem() {
 
 async function saveDiagram() {
   if (isSaving.value) return
+
   isSaving.value = true
 
   try {
@@ -1695,6 +2629,7 @@ async function saveDiagram() {
     }
 
     const chartData = savedChart?.data
+
     if (chartData?.id) {
       chart.id = chartData.id
       chart.slug = chartData.slug || chart.slug
@@ -1723,11 +2658,14 @@ async function saveDiagram() {
         })
       } else {
         const oldId = node.id
+
         result = await $fetch<any>(`${chartBaseUrl.value}/${chartKey}/nodes`, {
           method: 'POST',
           body: payload
         })
+
         const newId = result?.data?.id
+
         if (newId) {
           nodeIdMap.set(oldId, newId)
           node.id = newId
@@ -1756,7 +2694,9 @@ async function saveDiagram() {
           method: 'POST',
           body: payload
         })
+
         const newId = result?.data?.id
+
         if (newId) {
           edge.id = newId
           edge.persisted = true
@@ -1767,6 +2707,7 @@ async function saveDiagram() {
     deletedNodeIds.value = []
     deletedEdgeIds.value = []
     hasUnsavedChanges.value = false
+
     showToast('success', 'Tersimpan', 'Struktur organisasi berhasil disimpan ke database.')
   } catch (error: any) {
     showToast('error', 'Gagal menyimpan', getErrorMessage(error, 'Periksa endpoint dan koneksi lalu coba lagi.'))
@@ -1919,7 +2860,12 @@ async function exportAsPdf() {
 
     const dataUrl = stage.toDataURL({ pixelRatio: 2, mimeType: 'image/png' })
     const { jsPDF } = await import('jspdf')
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [stageWidth.value, stageHeight.value] })
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'px',
+      format: [stageWidth.value, stageHeight.value]
+    })
+
     pdf.addImage(dataUrl, 'PNG', 0, 0, stageWidth.value, stageHeight.value)
     pdf.save(`${cleanSlug(chart.slug || chart.title)}.pdf`)
   } catch (error: any) {
@@ -1929,27 +2875,32 @@ async function exportAsPdf() {
 
 function exportAsCsv() {
   exportMenuOpen.value = false
+
   const rows = [
     ['type', 'id', 'name', 'position', 'source', 'target', 'x', 'y'],
     ...nodes.value.map((node) => ['node', node.id, node.name, node.positionTitle, '', '', String(node.x), String(node.y)]),
     ...edges.value.map((edge) => ['edge', edge.id, '', '', edge.sourceNodeId, edge.targetNodeId, '', ''])
   ]
+
   downloadBlob(toCsv(rows), `${cleanSlug(chart.slug || chart.title)}.csv`, 'text/csv;charset=utf-8')
 }
 
 function exportAsExcel() {
   exportMenuOpen.value = false
+
   const rows = [
     ['Type', 'ID', 'Name', 'Position', 'Source', 'Target', 'X', 'Y'],
     ...nodes.value.map((node) => ['Node', node.id, node.name, node.positionTitle, '', '', String(node.x), String(node.y)]),
     ...edges.value.map((edge) => ['Edge', edge.id, '', '', edge.sourceNodeId, edge.targetNodeId, '', ''])
   ]
+
   downloadBlob(toTsv(rows), `${cleanSlug(chart.slug || chart.title)}.xls`, 'application/vnd.ms-excel;charset=utf-8')
 }
 
 function loadNodeImages() {
   for (const node of nodes.value) {
     if (!node.photoUrl || imageCache.value[node.id]) continue
+
     const image = new Image()
     image.crossOrigin = 'anonymous'
     image.onload = () => {
@@ -1964,6 +2915,7 @@ function loadNodeImages() {
 
 function anchorPoint(node: DiagramNode, anchor: AnchorKey) {
   const local = localAnchorPoint(node, anchor)
+
   return {
     x: node.x + local.x,
     y: node.y + local.y
@@ -1974,11 +2926,14 @@ function localAnchorPoint(node: DiagramNode, anchor: AnchorKey) {
   const map: Record<AnchorKey, { x: number; y: number }> = {
     top: { x: node.width / 2, y: 0 },
     bottom: { x: node.width / 2, y: node.height },
+    left: { x: 0, y: node.height / 2 },
+    right: { x: node.width, y: node.height / 2 },
     topLeft: { x: 0, y: 0 },
     topRight: { x: node.width, y: 0 },
     bottomLeft: { x: 0, y: node.height },
     bottomRight: { x: node.width, y: node.height }
   }
+
   return map[anchor]
 }
 
@@ -1999,6 +2954,15 @@ function screenToCanvas(x: number, y: number) {
   return {
     x: (x - stageX.value) / stageScale.value,
     y: (y - stageY.value) / stageScale.value
+  }
+}
+
+function canvasPointToScreen(point: { x: number; y: number }) {
+  const rect = stageShell.value?.getBoundingClientRect()
+
+  return {
+    x: Number(rect?.left || 0) + point.x * stageScale.value + stageX.value,
+    y: Number(rect?.top || 0) + point.y * stageScale.value + stageY.value
   }
 }
 
@@ -2045,7 +3009,13 @@ function randomPalette() {
     { bg: '#fdf2f8', border: '#fbcfe8', accent: '#db2777' },
     { bg: '#ecfeff', border: '#a5f3fc', accent: '#0891b2' }
   ]
+
   return palettes[Math.floor(Math.random() * palettes.length)]
+}
+
+function deepClone<T>(value: T): T {
+  if (typeof structuredClone === 'function') return structuredClone(value)
+  return JSON.parse(JSON.stringify(value)) as T
 }
 
 function uid() {
@@ -2087,6 +3057,10 @@ function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)))
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value))
+}
+
 function toCsv(rows: string[][]) {
   return rows
     .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))
@@ -2094,16 +3068,20 @@ function toCsv(rows: string[][]) {
 }
 
 function toTsv(rows: string[][]) {
-  return rows.map((row) => row.map((cell) => String(cell).replaceAll('\t', ' ')).join('\t')).join('\n')
+  return rows
+    .map((row) => row.map((cell) => String(cell).replaceAll('\t', ' ')).join('\t'))
+    .join('\n')
 }
 
 function downloadBlob(content: string, filename: string, type: string) {
   const blob = new Blob([content], { type })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
+
   link.href = url
   link.download = filename
   link.click()
+
   URL.revokeObjectURL(url)
 }
 
@@ -2119,10 +3097,12 @@ function getErrorMessage(error: any, fallback: string) {
 
 function showToast(type: ToastType, title: string, message: string) {
   if (toastTimer) clearTimeout(toastTimer)
+
   toast.type = type
   toast.title = title
   toast.message = message
   toast.show = true
+
   toastTimer = setTimeout(() => {
     toast.show = false
   }, 3400)
@@ -2278,11 +3258,19 @@ function closeToast() {
   color: rgb(23 23 23);
 }
 
+.tool-menu-enter-active,
+.tool-menu-leave-active,
 .modal-fade-enter-active,
 .modal-fade-leave-active,
 .toast-enter-active,
 .toast-leave-active {
   transition: 180ms ease;
+}
+
+.tool-menu-enter-from,
+.tool-menu-leave-to {
+  opacity: 0;
+  transform: translateY(-50%) translateX(12px) scale(0.96);
 }
 
 .modal-fade-enter-from,
@@ -2303,5 +3291,23 @@ function closeToast() {
   line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.action-modal-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.8rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgb(245 245 245);
+  background: rgb(250 250 250);
+  padding: 0.85rem;
+  transition: 160ms ease;
+}
+
+.action-modal-button:hover {
+  transform: translateY(-1px);
+  border-color: rgb(191 219 254);
+  background: rgb(239 246 255);
 }
 </style>

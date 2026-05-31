@@ -1034,6 +1034,12 @@ const sidebarGroups = ref<SidebarGroup[]>([
         description: 'Kelola lembaga, struktur, profil, dan informasi publik.'
       },
       {
+        label: 'Struktur Organisasi',
+        href: '/app/structure',
+        icon: 'bi:diagram-2-fill',
+        description: 'Kelola lembaga, struktur, profil, dan informasi publik.'
+      },
+      {
         label: 'Keuangan',
         href: '/app/#finance',
         icon: 'lucide:wallet-cards',

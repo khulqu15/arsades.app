@@ -1,3 +1,5 @@
+<!-- /pages/profile.vue -->
+
 <template>
   <main class="min-h-screen overflow-hidden bg-neutral-50 text-neutral-950">
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -148,8 +150,8 @@
         </section>
       </div>
 
-      <section class="mx-auto grid max-w-6xl gap-5 px-4 pb-14 sm:px-6 lg:grid-cols-[1fr_330px] lg:px-8">
-        <div class="space-y-5">
+      <section class="mx-auto grid max-w-6xl gap-5 px-4 pb-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_330px] lg:px-8">
+        <div class="space-y-5 min-w-0 p-4">
           <article class="rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex items-start justify-between gap-4">
               <div>
@@ -193,6 +195,21 @@
               </p>
             </section>
           </article>
+          
+          <section class="w-full">
+            <div class="overf overflow-x-auto max-w-full rounded-[2.25rem] border border-neutral-200 bg-white shadow-[0_30px_90px_-60px_rgba(15,23,42,0.55)]">
+              <div class="h-[560px] w-full overflow-hidden sm:h-[640px] lg:h-[720px] xl:h-[780px]">
+                <StructureOrganization
+                  :tenant-slug="tenantSlug"
+                  title="Struktur Organisasi"
+                  description="Susunan kelembagaan dan jabatan yang aktif dalam pengelolaan layanan."
+                  accent-color="#2563eb"
+                  height="100%"
+                  show-empty
+                />
+              </div>
+            </div>
+          </section>
         </div>
 
         <aside class="space-y-5">
@@ -272,6 +289,7 @@
 import { Icon } from '@iconify/vue'
 import { computed, defineComponent, h, ref } from 'vue'
 import { useAppApi } from '~/composables/useAppApi'
+import StructureOrganization from '../components/widget/StructureOriganization.vue'
 
 type TenantStatus = 'active' | 'inactive'
 type TenantType = 'village' | 'school' | 'pesantren' | 'company' | 'custom'
