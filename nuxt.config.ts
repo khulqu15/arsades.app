@@ -19,6 +19,7 @@ export default defineNuxtConfig({
   plugins: [
     '~/plugins/preline.client.ts',
     '~/plugins/page-loading.client.ts',
+    '~/plugins/vue-konva.client.ts'
   ],
 
   nitro: {
