@@ -1033,7 +1033,7 @@ import { Table } from '@tiptap/extension-table'
 import TableRow from '@tiptap/extension-table-row'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
-import { useHead, useRequestURL, useRuntimeConfig, useSeoMeta } from 'nuxt/app'
+import { useHead, useRequestURL, useRuntimeConfig, useSeoMeta, useFetch } from 'nuxt/app'
 import { useCloudinaryUpload } from '../../composables/useCloudinaryUpload'
 import { useAppApi } from '../../composables/useAppApi'
 
@@ -1194,7 +1194,7 @@ const {
   pending,
   error,
   refresh
-} = await useFetch<any>(apiUrl, {
+} = useFetch<any>(apiUrl, {
   key: computed(() => `app-profile-site-${tenantSlug.value}`),
   watch: [tenantSlug],
   default: () => ({
