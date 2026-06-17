@@ -1,6 +1,11 @@
-import mysql, { type Pool, type PoolConnection, type RowDataPacket } from 'mysql2/promise'
+import mysql, {
+    type Pool,
+    type PoolConnection,
+    type ResultSetHeader,
+    type RowDataPacket
+} from 'mysql2/promise'
 
-type DbParams = Array<string | number | boolean | null | Date>
+export type DbParams = Array<string | number | boolean | null | Date>
 
 declare global {
     // eslint-disable-next-line no-var
@@ -52,7 +57,7 @@ export async function dbQuery<T extends RowDataPacket[]>(sql: string, params: Db
 
 export async function dbExecute(sql: string, params: DbParams = [], connection?: PoolConnection) {
     const executor = connection || getMysqlPool()
-    const [result] = await executor.execute(sql, params)
+    const [result] = await executor.execute<ResultSetHeader>(sql, params)
     return result
 }
 

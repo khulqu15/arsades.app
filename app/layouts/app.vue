@@ -1022,6 +1022,12 @@ const sidebarGroups = ref<SidebarGroup[]>([
         description: 'Kelola fasilitas umum, layanan, lokasi, dan kontak.'
       },
       {
+        label: 'Pengaduan',
+        href: '/app/complaints',
+        icon: 'lucide:message-square-warning',
+        description: 'Pantau aduan, laporan, dan pengajuan warga.'
+      },
+      {
         label: 'Potensi',
         href: '/app/potentials',
         icon: 'lucide:sprout',
@@ -1091,12 +1097,10 @@ const mobileDockItems = computed<SidebarItem[]>(() => {
       icon: 'lucide:newspaper'
     },
     {
-      label: 'Keuangan',
-      href: '/app/#finance',
-      icon: 'lucide:wallet-cards',
-      badge: 'PRO',
-      pro: true,
-      description: 'Kelola laporan dan transparansi keuangan.'
+      label: 'Aduan',
+      href: '/app/complaints',
+      icon: 'lucide:message-square-warning',
+      description: 'Pantau aduan dan laporan warga.'
     },
     {
       label: 'Surat',

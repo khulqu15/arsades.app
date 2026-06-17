@@ -91,7 +91,7 @@
               type="button"
               class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-black text-neutral-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
               :disabled="isLoading"
-              @click.stop="reloadNews"
+              @click.stop="reloadNews()"
             >
               <Icon icon="solar:refresh-bold-duotone" class="h-5 w-5" :class="isLoading ? 'animate-spin' : ''" />
               Refresh
@@ -109,7 +109,7 @@
         </div>
       </section>
 
-      <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <div class="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between gap-3">
             <div>
@@ -149,6 +149,18 @@
         <div class="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between gap-3">
             <div>
+              <p class="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-400">Komentar</p>
+              <p class="mt-2 text-2xl font-black text-neutral-950">{{ totalCommentCount }}</p>
+            </div>
+            <div class="grid h-11 w-11 place-items-center rounded-2xl bg-sky-50 text-sky-600">
+              <Icon icon="solar:chat-round-dots-bold-duotone" class="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between gap-3">
+            <div>
               <p class="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-400">Draft Lokal</p>
               <p class="mt-2 text-2xl font-black text-neutral-950">{{ localDraftExists ? 'Ada' : '-' }}</p>
             </div>
@@ -159,7 +171,37 @@
         </div>
       </section>
 
-      <section class="rounded-3xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
+      <section class="rounded-3xl border border-neutral-200 bg-white p-2 shadow-sm">
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-black transition"
+            :class="activeTab === 'news' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-neutral-600 hover:bg-neutral-50'"
+            @click.stop="activeTab = 'news'"
+          >
+            <Icon icon="lucide:newspaper" class="h-5 w-5" />
+            Berita
+            <span class="rounded-full px-2 py-0.5 text-[10px] font-black" :class="activeTab === 'news' ? 'bg-white/15 text-white' : 'bg-neutral-100 text-neutral-500'">
+              {{ normalizedNews.length }}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-black transition"
+            :class="activeTab === 'comments' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-neutral-600 hover:bg-neutral-50'"
+            @click.stop="activeTab = 'comments'"
+          >
+            <Icon icon="solar:chat-round-dots-bold-duotone" class="h-5 w-5" />
+            Komentar
+            <span class="rounded-full px-2 py-0.5 text-[10px] font-black" :class="activeTab === 'comments' ? 'bg-white/15 text-white' : 'bg-neutral-100 text-neutral-500'">
+              {{ totalCommentCount }}
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <section v-if="activeTab === 'news'" class="rounded-3xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative min-w-0 flex-1">
             <Icon icon="solar:magnifer-linear" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
@@ -195,7 +237,7 @@
         </div>
       </section>
 
-      <div class="mt-3 flex gap-2 overflow-x-auto pb-1 pb-5">
+      <div v-if="activeTab === 'news'" class="mt-3 flex gap-2 overflow-x-auto pb-1 pb-5">
         <button
           v-for="option in statusFilterOptions"
           :key="option.value"
@@ -221,7 +263,152 @@
         {{ visibleError }}
       </div>
 
-      <section v-if="isLoading" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <section v-if="activeTab === 'comments'" class="space-y-4">
+        <section class="rounded-3xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
+          <div class="grid gap-3 lg:grid-cols-[1fr_220px_180px_auto] lg:items-center">
+            <div class="relative min-w-0">
+              <Icon icon="solar:magnifer-linear" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+              <input
+                v-model.trim="commentSearch"
+                type="text"
+                placeholder="Cari nama, email, isi komentar, atau judul berita..."
+                class="h-12 w-full rounded-2xl border border-neutral-200 bg-neutral-50 pl-12 pr-4 text-sm font-bold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-600/10"
+              >
+            </div>
+
+            <select
+              v-model="selectedCommentNewsId"
+              class="h-12 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 text-sm font-black text-neutral-700 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+            >
+              <option value="all">Semua Berita</option>
+              <option v-for="item in normalizedNews" :key="item.id" :value="item.id">
+                {{ item.title }}
+              </option>
+            </select>
+
+            <select
+              v-model="selectedCommentStatus"
+              class="h-12 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 text-sm font-black text-neutral-700 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+            >
+              <option v-for="option in commentStatusOptions" :key="option.value" :value="option.value">
+                {{ option.label }} ({{ option.count }})
+              </option>
+            </select>
+
+            <button
+              type="button"
+              class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-black text-neutral-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+              :disabled="commentsPending"
+              @click.stop="reloadComments"
+            >
+              <Icon icon="solar:refresh-bold-duotone" class="h-5 w-5" :class="commentsPending ? 'animate-spin' : ''" />
+              Refresh
+            </button>
+          </div>
+        </section>
+
+        <div v-if="commentsError" class="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm font-bold leading-6 text-red-700">
+          {{ getErrorMessage(commentsError, 'Komentar belum bisa dimuat.') }}
+        </div>
+
+        <section v-if="commentsPending" class="grid gap-3 lg:grid-cols-2">
+          <div v-for="item in 4" :key="item" class="h-40 animate-pulse rounded-[1.75rem] border border-neutral-200 bg-white p-4">
+            <div class="h-4 w-48 rounded-full bg-neutral-100"></div>
+            <div class="mt-4 h-3 w-full rounded-full bg-neutral-100"></div>
+            <div class="mt-2 h-3 w-4/5 rounded-full bg-neutral-100"></div>
+          </div>
+        </section>
+
+        <section v-else-if="filteredComments.length === 0" class="rounded-[1.75rem] border border-dashed border-neutral-300 bg-white p-8 text-center shadow-sm">
+          <div class="mx-auto grid h-14 w-14 place-items-center rounded-3xl bg-blue-50 text-blue-600">
+            <Icon icon="solar:chat-round-dots-bold-duotone" class="h-7 w-7" />
+          </div>
+          <h2 class="mt-4 text-xl font-black text-neutral-950">Belum ada komentar</h2>
+          <p class="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-neutral-500">
+            Komentar dari halaman publik akan tampil di sini setelah warga mengirim tanggapan.
+          </p>
+        </section>
+
+        <section v-else class="grid gap-3 lg:grid-cols-2">
+          <article
+            v-for="comment in filteredComments"
+            :key="comment.id"
+            class="rounded-[1.75rem] border border-neutral-200 bg-white p-4 shadow-sm"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="truncate text-sm font-black text-neutral-950">
+                    {{ comment.authorName || comment.name || 'Anonim' }}
+                  </h3>
+                  <span class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.1em]" :class="commentStatusClass(comment.status)">
+                    {{ commentStatusLabel(comment.status) }}
+                  </span>
+                </div>
+                <p class="mt-1 truncate text-xs font-bold text-neutral-400">
+                  {{ comment.authorEmail || comment.email }} - {{ formatDate(Number(comment.createdAt || Date.now())) }}
+                </p>
+              </div>
+
+              <span class="shrink-0 rounded-2xl bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                {{ comment.likesCount || comment.likes || 0 }} suka
+              </span>
+            </div>
+
+            <p class="mt-3 text-xs font-black uppercase tracking-[0.12em] text-neutral-400">
+              {{ commentNewsTitle(comment.newsId) }}
+            </p>
+
+            <p class="mt-2 whitespace-pre-line text-sm font-semibold leading-7 text-neutral-700">
+              {{ comment.content || comment.comment }}
+            </p>
+
+            <div class="mt-4 flex flex-wrap gap-2 border-t border-neutral-100 pt-4">
+              <button
+                type="button"
+                class="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-emerald-50 px-3 text-xs font-black text-emerald-700 transition hover:bg-emerald-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="isMutating"
+                @click.stop="updateCommentStatus(comment, 'approved')"
+              >
+                <Icon icon="solar:check-circle-bold-duotone" class="h-4 w-4" />
+                Approve
+              </button>
+
+              <button
+                type="button"
+                class="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-amber-50 px-3 text-xs font-black text-amber-700 transition hover:bg-amber-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="isMutating"
+                @click.stop="updateCommentStatus(comment, 'hidden')"
+              >
+                <Icon icon="solar:eye-closed-bold-duotone" class="h-4 w-4" />
+                Hide
+              </button>
+
+              <button
+                type="button"
+                class="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-red-50 px-3 text-xs font-black text-red-700 transition hover:bg-red-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="isMutating"
+                @click.stop="updateCommentStatus(comment, 'rejected')"
+              >
+                <Icon icon="solar:close-circle-bold-duotone" class="h-4 w-4" />
+                Reject
+              </button>
+
+              <button
+                type="button"
+                class="ml-auto inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 text-xs font-black text-neutral-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="isMutating"
+                @click.stop="deleteComment(comment)"
+              >
+                <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" />
+                Hapus
+              </button>
+            </div>
+          </article>
+        </section>
+      </section>
+
+      <section v-if="activeTab === 'news' && isLoading" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <div v-for="item in 6" :key="item" class="h-80 animate-pulse rounded-[1.75rem] border border-neutral-200 bg-white p-3">
           <div class="h-40 rounded-[1.35rem] bg-neutral-100"></div>
           <div class="mt-4 h-4 w-2/3 rounded-full bg-neutral-100"></div>
@@ -230,7 +417,7 @@
         </div>
       </section>
 
-      <section v-else-if="filteredNews.length === 0" class="rounded-[1.75rem] border border-dashed border-neutral-300 bg-white p-8 text-center shadow-sm">
+      <section v-else-if="activeTab === 'news' && filteredNews.length === 0" class="rounded-[1.75rem] border border-dashed border-neutral-300 bg-white p-8 text-center shadow-sm">
         <div class="mx-auto grid h-14 w-14 place-items-center rounded-3xl bg-blue-50 text-blue-600">
           <Icon icon="solar:document-add-bold-duotone" class="h-7 w-7" />
         </div>
@@ -250,7 +437,7 @@
         </button>
       </section>
 
-      <section v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <section v-else-if="activeTab === 'news'" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <article
           v-for="item in pagedNews"
           :key="item.id"
@@ -312,11 +499,30 @@
                 #{{ tag }}
               </span>
             </div>
+
+            <div class="mt-4 flex items-center justify-between gap-3 border-t border-neutral-100 pt-3">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 text-xs font-black text-blue-600 transition hover:text-blue-700"
+                @click.stop="openCommentsForNews(item)"
+              >
+                <Icon icon="solar:chat-round-dots-bold-duotone" class="h-4 w-4" />
+                {{ commentCountForNews(item.id) }} komentar
+              </button>
+
+              <NuxtLink
+                :to="publicNewsUrl(item)"
+                class="inline-flex items-center gap-1.5 text-xs font-black text-neutral-500 transition hover:text-blue-600"
+              >
+                Publik
+                <Icon icon="solar:alt-arrow-right-linear" class="h-4 w-4" />
+              </NuxtLink>
+            </div>
           </div>
         </article>
       </section>
 
-      <div v-if="hasMore && !isLoading" class="flex justify-center">
+      <div v-if="activeTab === 'news' && hasMore && !isLoading" class="flex justify-center">
         <button
           type="button"
           class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-5 text-sm font-black text-neutral-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
@@ -644,7 +850,7 @@
                           type="button"
                           class="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 text-xs font-black text-red-600 transition hover:bg-red-100"
                           :disabled="coverUploadDisabled"
-                          @click.stop="clearCoverFile"
+                          @click.stop="clearCoverFile()"
                         >
                           <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" />
                           Hapus
@@ -888,7 +1094,14 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, unref, w
 import { useHead, useRuntimeConfig, useSeoMeta } from '#imports'
 import RichText from '~/components/widget/RichText.vue'
 import { useNews } from '~/composables/data/useNews'
+import { useAppApi } from '~/composables/useAppApi'
 import { useCloudinaryUpload } from '~/composables/useCloudinaryUpload'
+import type {
+  NewsCommentItem,
+  NewsCommentListResponse,
+  NewsCommentStatsResponse,
+  NewsCommentStatus
+} from '../../../types/news-comment'
 
 definePageMeta({
   layout: 'app',
@@ -901,6 +1114,7 @@ type ToastType = 'success' | 'error'
 type CoverInputMode = 'upload' | 'link'
 type NewsStatus = 'published' | 'draft' | 'scheduled' | 'archived'
 type NewsContent = string | { kind?: string; json?: unknown; html?: string } | null | undefined
+type NewsDashboardTab = 'news' | 'comments'
 
 type NormalizedNewsItem = {
   id: string
@@ -934,11 +1148,16 @@ type NewsDraft = NewsForm & {
 
 const config = useRuntimeConfig()
 const news = useNews() as any
+const { tenantApiUrl } = useAppApi()
 const { uploading: cloudinaryUploading, uploadImage } = useCloudinaryUpload()
 
+const activeTab = ref<NewsDashboardTab>('news')
 const search = ref('')
 const selectedCategory = ref('all')
 const selectedStatus = ref<'all' | NewsStatus>('all')
+const commentSearch = ref('')
+const selectedCommentStatus = ref<NewsCommentStatus | 'all'>('all')
+const selectedCommentNewsId = ref('all')
 const page = ref(1)
 const pageSize = 12
 
@@ -967,6 +1186,7 @@ const coverFile = ref<File | null>(null)
 const coverLocalPreview = ref('')
 
 const isSubmittingNews = ref(false)
+const commentMutating = ref(false)
 const localLoading = ref(false)
 const localError = ref('')
 let draftTimer: ReturnType<typeof setTimeout> | null = null
@@ -1063,13 +1283,59 @@ const appLogo = computed(() => {
   ).trim()
 })
 
+const commentsApiUrl = computed(() => tenantApiUrl(tenantSlug.value, '/news-comments'))
+const commentStatsApiUrl = computed(() => tenantApiUrl(tenantSlug.value, '/news-comments/stats'))
+
+const {
+  data: commentsResponse,
+  pending: commentsPending,
+  error: commentsError,
+  refresh: refreshComments
+} = useFetch<NewsCommentListResponse>(commentsApiUrl, {
+  key: computed(() => `app-news-comments-${tenantSlug.value}`),
+  query: computed(() => ({
+    status: 'all',
+    limit: 100,
+    sort: 'newest'
+  })),
+  watch: [tenantSlug],
+  default: () => ({
+    data: [],
+    meta: {
+      page: 1,
+      limit: 100,
+      total: 0,
+      totalPages: 1
+    }
+  })
+})
+
+const {
+  data: commentStatsResponse,
+  refresh: refreshCommentStats
+} = useFetch<NewsCommentStatsResponse>(commentStatsApiUrl, {
+  key: computed(() => `app-news-comment-stats-${tenantSlug.value}`),
+  watch: [tenantSlug],
+  default: () => ({
+    data: {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      spam: 0,
+      hidden: 0,
+      byNewsId: {}
+    }
+  })
+})
+
 const rawNewsItems = computed(() => {
   const direct = unref(news.items)
   return Array.isArray(direct) ? direct : []
 })
 
 const isLoading = computed(() => Boolean(localLoading.value || unref(news.pending)))
-const isMutating = computed(() => Boolean(unref(news.mutationPending)))
+const isMutating = computed(() => Boolean(unref(news.mutationPending) || commentMutating.value))
 
 const visibleError = computed(() => {
   if (localError.value) return localError.value
@@ -1185,6 +1451,83 @@ const draftCount = computed(() => normalizedNews.value.filter((item) => item.sta
 const scheduledCount = computed(() => normalizedNews.value.filter((item) => item.status === 'scheduled').length)
 const archivedCount = computed(() => normalizedNews.value.filter((item) => item.status === 'archived').length)
 
+const commentStats = computed(() => {
+  return commentStatsResponse.value?.data || {
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    spam: 0,
+    hidden: 0,
+    byNewsId: {}
+  }
+})
+
+const newsComments = computed(() => commentsResponse.value?.data || [])
+const totalCommentCount = computed(() => Number(commentStats.value.total || 0))
+const pendingCommentCount = computed(() => Number(commentStats.value.pending || 0))
+const approvedCommentCount = computed(() => Number(commentStats.value.approved || 0))
+
+const commentStatusOptions = computed<Array<{ value: NewsCommentStatus | 'all'; label: string; icon: string; count: number }>>(() => {
+  return [
+    {
+      value: 'all',
+      label: 'Semua',
+      icon: 'solar:layers-bold-duotone',
+      count: totalCommentCount.value
+    },
+    {
+      value: 'pending',
+      label: 'Pending',
+      icon: 'solar:clock-circle-bold-duotone',
+      count: pendingCommentCount.value
+    },
+    {
+      value: 'approved',
+      label: 'Approved',
+      icon: 'solar:check-circle-bold-duotone',
+      count: approvedCommentCount.value
+    },
+    {
+      value: 'rejected',
+      label: 'Rejected',
+      icon: 'solar:close-circle-bold-duotone',
+      count: Number(commentStats.value.rejected || 0)
+    },
+    {
+      value: 'hidden',
+      label: 'Hidden',
+      icon: 'solar:eye-closed-bold-duotone',
+      count: Number(commentStats.value.hidden || 0)
+    }
+  ]
+})
+
+const filteredComments = computed(() => {
+  const keyword = commentSearch.value.trim().toLowerCase()
+
+  return newsComments.value.filter((item) => {
+    const matchKeyword = !keyword || [
+      item.authorName,
+      item.authorEmail,
+      item.name,
+      item.email,
+      item.content,
+      item.comment,
+      commentNewsTitle(item.newsId)
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(keyword)
+
+    const matchStatus = selectedCommentStatus.value === 'all' || item.status === selectedCommentStatus.value
+    const matchNews = selectedCommentNewsId.value === 'all' || item.newsId === selectedCommentNewsId.value
+
+    return matchKeyword && matchStatus && matchNews
+  })
+})
+
 const canGoNext = computed(() => {
   if (formStep.value === 1) return newsForm.title.trim().length >= 3
   if (formStep.value === 2) return true
@@ -1203,9 +1546,9 @@ const selectedNewsContent = computed(() => {
 })
 
 useSeoMeta({
-  title: () => `${profile.value.title} · ${profile.value.name}`,
+  title: () => `${profile.value.title} - ${profile.value.name}`,
   description: () => profile.value.description,
-  ogTitle: () => `${profile.value.title} · ${profile.value.name}`,
+  ogTitle: () => `${profile.value.title} - ${profile.value.name}`,
   ogDescription: () => profile.value.description,
   robots: 'noindex, nofollow',
   themeColor: '#2563eb'
@@ -1223,7 +1566,7 @@ useHead({
   ]
 })
 
-watch([search, selectedCategory, selectedStatus], () => {
+watch([search, selectedCategory, selectedStatus, commentSearch, selectedCommentStatus, selectedCommentNewsId], () => {
   page.value = 1
 })
 
@@ -1262,12 +1605,14 @@ async function reloadNews(silent = false) {
       await news.fetchNews({
         tenantSlug: tenantSlug.value,
         status: 'all',
-        limit: 100,
+        limit: 200,
         sort: 'newest'
       })
     } else if (typeof news.refresh === 'function') {
       await news.refresh()
     }
+
+    await reloadComments()
   } catch (error) {
     const message = getErrorMessage(error, 'Data berita gagal dimuat.')
     localError.value = message
@@ -1278,6 +1623,81 @@ async function reloadNews(silent = false) {
   } finally {
     localLoading.value = false
   }
+}
+
+async function reloadComments() {
+  await Promise.all([
+    refreshComments(),
+    refreshCommentStats()
+  ])
+}
+
+function commentCountForNews(newsId: string) {
+  return Number(commentStats.value.byNewsId?.[newsId]?.total || 0)
+}
+
+function commentNewsTitle(newsId: string) {
+  return normalizedNews.value.find((item) => item.id === newsId)?.title || 'Berita tidak ditemukan'
+}
+
+function openCommentsForNews(item: NormalizedNewsItem) {
+  selectedCommentNewsId.value = item.id
+  activeTab.value = 'comments'
+}
+
+async function updateCommentStatus(comment: NewsCommentItem, status: NewsCommentStatus) {
+  commentMutating.value = true
+
+  try {
+    await $fetch(`${commentsApiUrl.value}/${comment.id}`, {
+      method: 'PUT',
+      body: {
+        status
+      }
+    })
+
+    showToast('success', 'Komentar Diupdate', `Status komentar menjadi ${commentStatusLabel(status)}.`)
+    await reloadComments()
+  } catch (error) {
+    showToast('error', 'Gagal Update Komentar', getErrorMessage(error, 'Komentar belum bisa diupdate.'))
+  } finally {
+    commentMutating.value = false
+  }
+}
+
+async function deleteComment(comment: NewsCommentItem) {
+  commentMutating.value = true
+
+  try {
+    await $fetch(`${commentsApiUrl.value}/${comment.id}`, {
+      method: 'DELETE'
+    })
+
+    showToast('success', 'Komentar Dihapus', 'Komentar berhasil dihapus.')
+    await reloadComments()
+  } catch (error) {
+    showToast('error', 'Gagal Menghapus Komentar', getErrorMessage(error, 'Komentar belum bisa dihapus.'))
+  } finally {
+    commentMutating.value = false
+  }
+}
+
+function commentStatusLabel(status: NewsCommentStatus | string) {
+  if (status === 'approved') return 'Approved'
+  if (status === 'rejected') return 'Rejected'
+  if (status === 'spam') return 'Spam'
+  if (status === 'hidden') return 'Hidden'
+
+  return 'Pending'
+}
+
+function commentStatusClass(status: NewsCommentStatus | string) {
+  if (status === 'approved') return 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
+  if (status === 'rejected') return 'bg-red-50 text-red-700 ring-1 ring-red-100'
+  if (status === 'spam') return 'bg-orange-50 text-orange-700 ring-1 ring-orange-100'
+  if (status === 'hidden') return 'bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200'
+
+  return 'bg-amber-50 text-amber-700 ring-1 ring-amber-100'
 }
 
 function createEmptyNewsForm(): NewsForm {

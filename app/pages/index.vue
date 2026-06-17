@@ -5,6 +5,7 @@
     <InvitationHeroVillage />
     <InfoHeroVillage />
     <ArsadesHeroVillage />
+    <FloatingPublicServiceButton />
   </div>
 </template>
 
@@ -22,6 +23,8 @@ import InvitationHeroVillage from '../components/hero/InvitationHero.vue'
 import InfoHeroVillage from '../components/hero/InfoHero.vue'
 // @ts-ignore - ignore Vue SFC default export type issue
 import ArsadesHeroVillage from '../components/hero/ArsadesHero.vue'
+// @ts-ignore - ignore Vue SFC default export type issue
+import FloatingPublicServiceButton from '../components/widget/FloatingPublicServiceButton.vue'
 
 const route = useRoute()
 const config = useRuntimeConfig()

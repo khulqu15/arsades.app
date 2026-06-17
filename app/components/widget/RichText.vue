@@ -18,10 +18,7 @@
         class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
         @click="openTooltipCenter"
       >
-        <Icon
-          icon="solar:magic-stick-3-bold-duotone"
-          class="h-4 w-4"
-        />
+        <Icon icon="solar:magic-stick-3-bold-duotone" class="h-4 w-4" />
         Tools
       </button>
     </div>
@@ -56,11 +53,8 @@
           role="dialog"
           aria-label="Editor tools"
           tabindex="-1"
-          class="fixed z-[9999] max-h-96 w-[min(360px,calc(100vw-1rem))] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-2 shadow-2xl shadow-gray-900/15 ring-1 ring-gray-900/5"
-          :style="{
-            left: `${tooltipPosition.x + (containerRef?.getBoundingClientRect().left || 0)}px`,
-            top: `${tooltipPosition.y + (containerRef?.getBoundingClientRect().top || 0)}px`
-          }"
+          class="fixed z-[9999] max-h-96 w-[min(390px,calc(100vw-1rem))] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-2 shadow-2xl shadow-gray-900/15 ring-1 ring-gray-900/5"
+          :style="tooltipStyle"
           @click.stop
           @keydown.esc="closeTooltip"
         >
@@ -79,10 +73,7 @@
               class="grid h-8 w-8 place-items-center rounded-xl text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               @click="closeTooltip"
             >
-              <Icon
-                icon="solar:close-circle-bold-duotone"
-                class="h-5 w-5"
-              />
+              <Icon icon="solar:close-circle-bold-duotone" class="h-5 w-5" />
             </button>
           </div>
 
@@ -97,15 +88,13 @@
                 : 'bg-gray-50 text-gray-500 hover:bg-blue-50 hover:text-blue-700'"
               @click="activePanel = group.value"
             >
-              <Icon
-                :icon="group.icon"
-                class="mx-auto mb-1 h-4 w-4"
-              />
+              <Icon :icon="group.icon" class="mx-auto mb-1 h-4 w-4" />
               {{ group.label }}
             </button>
           </div>
 
           <div class="mt-2 rounded-2xl border border-gray-200 bg-gray-50 p-2">
+            <!-- Format -->
             <div v-if="activePanel === 'format'">
               <p class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
                 Format teks
@@ -122,15 +111,13 @@
                     : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-blue-50 hover:text-blue-700'"
                   @click="setBlock(item.value)"
                 >
-                  <Icon
-                    :icon="item.icon"
-                    class="h-4 w-4"
-                  />
+                  <Icon :icon="item.icon" class="h-4 w-4" />
                   {{ item.label }}
                 </button>
               </div>
             </div>
 
+            <!-- Style -->
             <div v-else-if="activePanel === 'style'">
               <p class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
                 Gaya teks
@@ -145,10 +132,7 @@
                     : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-blue-50 hover:text-blue-700'"
                   @click="editor?.chain().focus().toggleBold().run()"
                 >
-                  <Icon
-                    icon="solar:text-bold-bold"
-                    class="h-4 w-4"
-                  />
+                  <Icon icon="solar:text-bold-bold" class="h-4 w-4" />
                   Bold
                 </button>
 
@@ -160,10 +144,7 @@
                     : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-blue-50 hover:text-blue-700'"
                   @click="editor?.chain().focus().toggleItalic().run()"
                 >
-                  <Icon
-                    icon="solar:text-italic-bold"
-                    class="h-4 w-4"
-                  />
+                  <Icon icon="solar:text-italic-bold" class="h-4 w-4" />
                   Italic
                 </button>
 
@@ -175,10 +156,7 @@
                     : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-blue-50 hover:text-blue-700'"
                   @click="editor?.chain().focus().toggleBulletList().run()"
                 >
-                  <Icon
-                    icon="solar:list-down-bold-duotone"
-                    class="h-4 w-4"
-                  />
+                  <Icon icon="solar:list-down-bold-duotone" class="h-4 w-4" />
                   Bullet
                 </button>
 
@@ -190,15 +168,13 @@
                     : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-blue-50 hover:text-blue-700'"
                   @click="editor?.chain().focus().toggleOrderedList().run()"
                 >
-                  <Icon
-                    icon="solar:list-check-bold-duotone"
-                    class="h-4 w-4"
-                  />
+                  <Icon icon="solar:list-check-bold-duotone" class="h-4 w-4" />
                   Number
                 </button>
               </div>
             </div>
 
+            <!-- Table -->
             <div v-else-if="activePanel === 'table'">
               <p class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
                 Table
@@ -210,10 +186,7 @@
                   class="inline-flex items-center gap-2 rounded-xl bg-white px-2.5 py-2 text-xs font-semibold text-gray-600 ring-1 ring-gray-200 transition hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
                   @click="insertTable"
                 >
-                  <Icon
-                    icon="solar:widget-2-bold-duotone"
-                    class="h-4 w-4"
-                  />
+                  <Icon icon="solar:widget-2-bold-duotone" class="h-4 w-4" />
                   Insert
                 </button>
 
@@ -222,10 +195,7 @@
                   class="inline-flex items-center gap-2 rounded-xl bg-white px-2.5 py-2 text-xs font-semibold text-gray-600 ring-1 ring-gray-200 transition hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
                   @click="editor?.chain().focus().addColumnAfter().run()"
                 >
-                  <Icon
-                    icon="solar:add-square-bold-duotone"
-                    class="h-4 w-4"
-                  />
+                  <Icon icon="solar:add-square-bold-duotone" class="h-4 w-4" />
                   Column
                 </button>
 
@@ -234,10 +204,7 @@
                   class="inline-flex items-center gap-2 rounded-xl bg-white px-2.5 py-2 text-xs font-semibold text-gray-600 ring-1 ring-gray-200 transition hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
                   @click="editor?.chain().focus().addRowAfter().run()"
                 >
-                  <Icon
-                    icon="solar:add-square-bold-duotone"
-                    class="h-4 w-4"
-                  />
+                  <Icon icon="solar:add-square-bold-duotone" class="h-4 w-4" />
                   Row
                 </button>
 
@@ -246,15 +213,13 @@
                   class="inline-flex items-center gap-2 rounded-xl bg-white px-2.5 py-2 text-xs font-semibold text-red-600 ring-1 ring-gray-200 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20"
                   @click="editor?.chain().focus().deleteTable().run()"
                 >
-                  <Icon
-                    icon="solar:trash-bin-trash-bold-duotone"
-                    class="h-4 w-4"
-                  />
+                  <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" />
                   Delete
                 </button>
               </div>
             </div>
 
+            <!-- Checkbox / Radio -->
             <div v-else-if="activePanel === 'input'">
               <p class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
                 Checkbox / Radio
@@ -269,10 +234,7 @@
                     : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-blue-50 hover:text-blue-700'"
                   @click="choiceType = 'checkbox'"
                 >
-                  <Icon
-                    icon="solar:check-square-bold-duotone"
-                    class="mx-auto mb-1 h-4 w-4"
-                  />
+                  <Icon icon="solar:check-square-bold-duotone" class="mx-auto mb-1 h-4 w-4" />
                   Checkbox
                 </button>
 
@@ -284,10 +246,7 @@
                     : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-blue-50 hover:text-blue-700'"
                   @click="choiceType = 'radio'"
                 >
-                  <Icon
-                    icon="solar:record-circle-bold-duotone"
-                    class="mx-auto mb-1 h-4 w-4"
-                  />
+                  <Icon icon="solar:record-circle-bold-duotone" class="mx-auto mb-1 h-4 w-4" />
                   Radio
                 </button>
               </div>
@@ -323,11 +282,7 @@
                 </p>
 
                 <div class="taskflow-choice-preview">
-                  <input
-                    :type="choiceType"
-                    :checked="choiceChecked"
-                    disabled
-                  >
+                  <input :type="choiceType" :checked="choiceChecked" disabled>
 
                   <div>
                     <p>{{ choiceLabel || 'Label pilihan' }}</p>
@@ -342,17 +297,15 @@
                 :disabled="!choiceLabel.trim()"
                 @click="insertChoiceInput"
               >
-                <Icon
-                  icon="solar:add-circle-bold-duotone"
-                  class="h-4 w-4"
-                />
+                <Icon icon="solar:add-circle-bold-duotone" class="h-4 w-4" />
                 Sisipkan {{ choiceType === 'checkbox' ? 'checkbox' : 'radio' }}
               </button>
             </div>
 
+            <!-- Embed -->
             <div v-else>
               <p class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
-                Embed link
+                Embed
               </p>
 
               <div class="mb-2 grid grid-cols-3 gap-1.5">
@@ -364,43 +317,218 @@
                   :class="embedType === item.value
                     ? 'bg-blue-600 text-white'
                     : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-blue-50 hover:text-blue-700'"
-                  @click="embedType = item.value"
+                  @click="setEmbedType(item.value)"
                 >
-                  <Icon
-                    :icon="item.icon"
-                    class="mx-auto mb-1 h-4 w-4"
-                  />
+                  <Icon :icon="item.icon" class="mx-auto mb-1 h-4 w-4" />
                   {{ item.label }}
                 </button>
               </div>
 
-              <input
-                v-model="embedUrl"
-                type="url"
-                class="min-h-10 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10"
-                :placeholder="embedPlaceholder"
-              >
+              <!-- Image Tools -->
+              <div v-if="embedType === 'image'" class="space-y-2">
+                <div class="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    class="rounded-xl px-2.5 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                    :class="imageSourceMode === 'upload'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-blue-50 hover:text-blue-700'"
+                    @click="imageSourceMode = 'upload'"
+                  >
+                    <Icon icon="solar:upload-square-bold-duotone" class="mx-auto mb-1 h-4 w-4" />
+                    Upload
+                  </button>
 
-              <input
-                v-if="embedType === 'pdf'"
-                v-model="embedTitle"
-                type="text"
-                class="mt-1.5 min-h-10 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10"
-                placeholder="Judul PDF, contoh: Brief Project"
-              >
+                  <button
+                    type="button"
+                    class="rounded-xl px-2.5 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                    :class="imageSourceMode === 'link'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-blue-50 hover:text-blue-700'"
+                    @click="imageSourceMode = 'link'"
+                  >
+                    <Icon icon="solar:link-circle-bold-duotone" class="mx-auto mb-1 h-4 w-4" />
+                    Link
+                  </button>
+                </div>
 
-              <button
-                type="button"
-                class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
-                :disabled="!embedUrl.trim()"
-                @click="insertEmbed"
-              >
-                <Icon
-                  icon="solar:add-circle-bold-duotone"
-                  class="h-4 w-4"
-                />
-                Sisipkan embed
-              </button>
+                <div v-if="imageSourceMode === 'upload'">
+                  <div
+                    class="group relative flex min-h-40 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-white p-3 text-center transition hover:border-blue-300 hover:bg-blue-50/50"
+                    :class="uploadImagePreviewUrl ? 'border-blue-200 bg-blue-50/40' : ''"
+                    @click="triggerImageFileInput"
+                    @dragover.prevent
+                    @drop.prevent="handleImageDrop"
+                  >
+                    <input
+                      ref="imageFileInput"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      class="hidden"
+                      @change="handleImageFileInput"
+                    >
+
+                    <img
+                      v-if="uploadImagePreviewUrl"
+                      :src="uploadImagePreviewUrl"
+                      alt="Preview gambar"
+                      class="absolute inset-0 h-full w-full object-cover"
+                    >
+
+                    <div
+                      v-if="uploadImagePreviewUrl"
+                      class="absolute inset-0 bg-gradient-to-t from-gray-950/55 via-gray-950/10 to-transparent"
+                    ></div>
+
+                    <div
+                      class="relative z-10"
+                      :class="uploadImagePreviewUrl ? 'text-white' : 'text-gray-500'"
+                    >
+                      <div
+                        class="mx-auto grid h-11 w-11 place-items-center rounded-2xl"
+                        :class="uploadImagePreviewUrl ? 'bg-white/20 text-white backdrop-blur' : 'bg-blue-50 text-blue-600'"
+                      >
+                        <Icon
+                          :icon="uploadImagePreviewUrl ? 'solar:gallery-check-bold-duotone' : 'solar:upload-square-bold-duotone'"
+                          class="h-6 w-6"
+                        />
+                      </div>
+
+                      <p class="mt-2 text-xs font-black">
+                        {{ uploadImageFile ? uploadImageFile.name : 'Pilih atau drop gambar' }}
+                      </p>
+
+                      <p class="mt-1 text-[11px] font-semibold opacity-80">
+                        JPG, PNG, WebP · Maks 5MB
+                      </p>
+                    </div>
+
+                    <button
+                      v-if="uploadImagePreviewUrl"
+                      type="button"
+                      class="absolute right-2 top-2 z-20 grid h-8 w-8 place-items-center rounded-xl bg-white/90 text-red-600 shadow-sm transition hover:bg-white"
+                      @click.stop="clearUploadImage"
+                    >
+                      <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div v-else>
+                  <input
+                    v-model="imageLinkUrl"
+                    type="url"
+                    class="editor-input"
+                    placeholder="https://domain.com/gambar.png"
+                    @keyup="queueImageLinkValidation"
+                    @paste="queueImageLinkValidation"
+                    @blur="validateImageLinkNow"
+                  >
+
+                  <div
+                    v-if="imageLinkUrl.trim()"
+                    class="mt-2 overflow-hidden rounded-2xl border border-gray-200 bg-white"
+                  >
+                    <div
+                      v-if="imageLinkStatus === 'checking'"
+                      class="grid min-h-32 place-items-center p-4 text-center"
+                    >
+                      <Icon icon="svg-spinners:180-ring" class="h-7 w-7 text-blue-600" />
+                      <p class="mt-2 text-xs font-bold text-gray-500">
+                        Mengecek gambar...
+                      </p>
+                    </div>
+
+                    <img
+                      v-else-if="imageLinkStatus === 'valid'"
+                      :src="imageLinkPreviewSrc"
+                      alt="Preview gambar"
+                      class="max-h-48 w-full object-cover"
+                    >
+
+                    <div
+                      v-else-if="imageLinkStatus === 'invalid'"
+                      class="grid min-h-32 place-items-center p-4 text-center"
+                    >
+                      <div class="grid h-12 w-12 place-items-center rounded-2xl bg-red-50 text-red-600">
+                        <Icon icon="solar:danger-circle-bold-duotone" class="h-7 w-7" />
+                      </div>
+                      <p class="mt-2 text-xs font-black text-red-600">
+                        Gambar invalid
+                      </p>
+                      <p class="mt-1 text-[11px] font-semibold text-gray-500">
+                        URL tidak valid atau gambar tidak ditemukan.
+                      </p>
+                    </div>
+
+                    <div
+                      v-else
+                      class="grid min-h-32 place-items-center p-4 text-center text-gray-400"
+                    >
+                      <Icon icon="solar:gallery-minimalistic-bold-duotone" class="h-8 w-8" />
+                      <p class="mt-2 text-xs font-bold">
+                        Preview gambar akan muncul di sini.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <input
+                  v-model="imageAlt"
+                  type="text"
+                  class="editor-input"
+                  placeholder="Alt text, contoh: Dokumentasi kegiatan desa"
+                >
+
+                <div
+                  v-if="imageErrorMessage"
+                  class="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600"
+                >
+                  <Icon icon="solar:danger-circle-bold-duotone" class="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{{ imageErrorMessage }}</span>
+                </div>
+
+                <button
+                  type="button"
+                  class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
+                  :disabled="imageInsertDisabled"
+                  @click="insertImage"
+                >
+                  <Icon
+                    :icon="imageUploading ? 'svg-spinners:180-ring' : 'solar:add-circle-bold-duotone'"
+                    class="h-4 w-4"
+                  />
+                  {{ imageUploading ? 'Mengunggah gambar...' : 'Sisipkan gambar' }}
+                </button>
+              </div>
+
+              <!-- PDF / YouTube -->
+              <div v-else class="space-y-1.5">
+                <input
+                  v-model="embedUrl"
+                  type="url"
+                  class="editor-input"
+                  :placeholder="embedPlaceholder"
+                >
+
+                <input
+                  v-if="embedType === 'pdf'"
+                  v-model="embedTitle"
+                  type="text"
+                  class="editor-input"
+                  placeholder="Judul PDF, contoh: Brief Project"
+                >
+
+                <button
+                  type="button"
+                  class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
+                  :disabled="!embedUrl.trim()"
+                  @click="insertEmbed"
+                >
+                  <Icon icon="solar:add-circle-bold-duotone" class="h-4 w-4" />
+                  Sisipkan embed
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -415,23 +543,19 @@ import { Node as TiptapNode, mergeAttributes } from '@tiptap/core'
 import { Editor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
-import Image from '@tiptap/extension-image'
+import TiptapImage from '@tiptap/extension-image'
 import Youtube from '@tiptap/extension-youtube'
 import { Table } from '@tiptap/extension-table'
 import TableRow from '@tiptap/extension-table-row'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch
-} from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useCloudinaryUpload } from '~/composables/useCloudinaryUpload'
 
 type ToolPanel = 'format' | 'style' | 'table' | 'input' | 'embed'
 type EmbedType = 'image' | 'pdf' | 'youtube'
+type ImageSourceMode = 'upload' | 'link'
+type ImageLinkStatus = 'idle' | 'checking' | 'valid' | 'invalid'
 type BlockType = 'paragraph' | 'h1' | 'h2' | 'h3'
 type ChoiceType = 'checkbox' | 'radio'
 
@@ -447,6 +571,8 @@ const props = withDefaults(
     placeholder: 'Tulis detail tugas di sini...'
   }
 )
+
+const uploader = useCloudinaryUpload() as any
 
 const PdfEmbed = TiptapNode.create({
   name: 'pdfEmbed',
@@ -569,6 +695,7 @@ const ChoiceInput = TiptapNode.create({
 
 const containerRef = ref<HTMLElement | null>(null)
 const tooltipRef = ref<HTMLElement | null>(null)
+const imageFileInput = ref<HTMLInputElement | null>(null)
 const editor = ref<Editor | null>(null)
 
 const showTooltip = ref(false)
@@ -582,13 +709,26 @@ const embedType = ref<EmbedType>('image')
 const embedUrl = ref('')
 const embedTitle = ref('')
 
+const imageSourceMode = ref<ImageSourceMode>('upload')
+const uploadImageFile = ref<File | null>(null)
+const uploadImagePreviewUrl = ref('')
+const imageLinkUrl = ref('')
+const imageLinkPreviewSrc = ref('')
+const imageLinkStatus = ref<ImageLinkStatus>('idle')
+const imageAlt = ref('')
+const imageErrorMessage = ref('')
+const imageUploading = ref(false)
+
 const choiceType = ref<ChoiceType>('checkbox')
 const choiceName = ref('')
 const choiceLabel = ref('')
 const choiceDescription = ref('')
 const choiceChecked = ref(false)
 
-let longPressTimer: number | null = null
+let longPressTimer: ReturnType<typeof setTimeout> | null = null
+let imageLinkTimer: ReturnType<typeof setTimeout> | null = null
+let imageLinkValidationToken = 0
+let uploadObjectUrl = ''
 
 const toolGroups = [
   {
@@ -659,13 +799,31 @@ const embedMenus = [
   }
 ]
 
+const tooltipStyle = computed(() => {
+  const rect = containerRef.value?.getBoundingClientRect()
+
+  return {
+    left: `${tooltipPosition.value.x + Number(rect?.left || 0)}px`,
+    top: `${tooltipPosition.value.y + Number(rect?.top || 0)}px`
+  }
+})
+
 const embedPlaceholder = computed(() => {
-  if (embedType.value === 'image') return 'https://domain.com/gambar.png'
   if (embedType.value === 'pdf') return 'https://domain.com/file.pdf'
   return 'https://www.youtube.com/watch?v=...'
 })
 
-const createEditor = () => {
+const imageInsertDisabled = computed(() => {
+  if (imageUploading.value) return true
+
+  if (imageSourceMode.value === 'upload') {
+    return !uploadImageFile.value
+  }
+
+  return imageLinkStatus.value !== 'valid' || !imageLinkPreviewSrc.value
+})
+
+function createEditor() {
   editor.value = new Editor({
     content: model.value || '<p></p>',
     extensions: [
@@ -673,7 +831,7 @@ const createEditor = () => {
       Placeholder.configure({
         placeholder: props.placeholder
       }),
-      Image.configure({
+      TiptapImage.configure({
         inline: false,
         allowBase64: false
       }),
@@ -693,7 +851,7 @@ const createEditor = () => {
     ],
     editorProps: {
       attributes: {
-        class: 'min-h-[260px] px-5 py-4 text-sm leading-7 text-white/80 outline-none'
+        class: 'min-h-[260px] px-5 py-4 text-sm leading-7 text-slate-800 outline-none'
       }
     },
     onUpdate({ editor }) {
@@ -702,7 +860,7 @@ const createEditor = () => {
   })
 }
 
-const clampTooltipPosition = async (x: number, y: number) => {
+async function clampTooltipPosition(x: number, y: number) {
   await nextTick()
 
   const container = containerRef.value
@@ -711,8 +869,8 @@ const clampTooltipPosition = async (x: number, y: number) => {
     return
   }
 
-  const tooltipWidth = 430
-  const tooltipHeight = 560
+  const tooltipWidth = 390
+  const tooltipHeight = 420
 
   const maxX = Math.max(12, container.clientWidth - tooltipWidth - 12)
   const maxY = Math.max(12, container.clientHeight - tooltipHeight - 12)
@@ -723,7 +881,7 @@ const clampTooltipPosition = async (x: number, y: number) => {
   }
 }
 
-const openTooltipAtClientPoint = async (clientX: number, clientY: number) => {
+async function openTooltipAtClientPoint(clientX: number, clientY: number) {
   const container = containerRef.value
   if (!container) return
 
@@ -737,57 +895,57 @@ const openTooltipAtClientPoint = async (clientX: number, clientY: number) => {
   )
 }
 
-const openTooltipFromMouse = async (event: MouseEvent) => {
+async function openTooltipFromMouse(event: MouseEvent) {
   event.preventDefault()
   await openTooltipAtClientPoint(event.clientX, event.clientY)
 }
 
-const openTooltipCenter = async () => {
+async function openTooltipCenter() {
   const container = containerRef.value
   if (!container) return
 
   showTooltip.value = true
 
   await clampTooltipPosition(
-    Math.max(12, container.clientWidth - 450),
+    Math.max(12, container.clientWidth - 410),
     70
   )
 }
 
-const handleTouchStart = (event: TouchEvent) => {
+function handleTouchStart(event: TouchEvent) {
   clearLongPress()
 
   const touch = event.touches[0]
   if (!touch) return
 
-  longPressTimer = window.setTimeout(() => {
+  longPressTimer = setTimeout(() => {
     openTooltipAtClientPoint(touch.clientX, touch.clientY)
   }, 520)
 }
 
-const clearLongPress = () => {
+function clearLongPress() {
   if (longPressTimer) {
-    window.clearTimeout(longPressTimer)
+    clearTimeout(longPressTimer)
     longPressTimer = null
   }
 }
 
-const closeTooltip = () => {
+function closeTooltip() {
   showTooltip.value = false
 }
 
-const isActive = (name: string) => {
+function isActive(name: string) {
   return Boolean(editor.value?.isActive(name))
 }
 
-const isBlockActive = (type: BlockType) => {
+function isBlockActive(type: BlockType) {
   if (type === 'paragraph') return Boolean(editor.value?.isActive('paragraph'))
   if (type === 'h1') return Boolean(editor.value?.isActive('heading', { level: 1 }))
   if (type === 'h2') return Boolean(editor.value?.isActive('heading', { level: 2 }))
   return Boolean(editor.value?.isActive('heading', { level: 3 }))
 }
 
-const setBlock = (type: BlockType) => {
+function setBlock(type: BlockType) {
   if (type === 'paragraph') {
     editor.value?.chain().focus().setParagraph().run()
   }
@@ -805,7 +963,7 @@ const setBlock = (type: BlockType) => {
   }
 }
 
-const insertTable = () => {
+function insertTable() {
   editor.value?.chain().focus().insertTable({
     rows: 3,
     cols: 3,
@@ -813,16 +971,34 @@ const insertTable = () => {
   }).run()
 }
 
-const normalizeUrl = (value: string) => {
+function setEmbedType(type: EmbedType) {
+  embedType.value = type
+  imageErrorMessage.value = ''
+
+  if (type !== 'image') {
+    closeImageValidation()
+  }
+}
+
+function normalizeUrl(value: string) {
   const url = value.trim()
 
   if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  if (/^https?:\/\//i.test(url)) return url
 
   return `https://${url}`
 }
 
-const normalizeInputName = (value: string) => {
+function isValidHttpUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return ['http:', 'https:'].includes(url.protocol)
+  } catch {
+    return false
+  }
+}
+
+function normalizeInputName(value: string) {
   return value
     .trim()
     .toLowerCase()
@@ -831,7 +1007,7 @@ const normalizeInputName = (value: string) => {
     .replace(/^-|-$/g, '')
 }
 
-const insertChoiceInput = () => {
+function insertChoiceInput() {
   const label = choiceLabel.value.trim()
   if (!label) return
 
@@ -857,17 +1033,280 @@ const insertChoiceInput = () => {
   closeTooltip()
 }
 
-const insertEmbed = () => {
+function triggerImageFileInput() {
+  imageFileInput.value?.click()
+}
+
+function handleImageFileInput(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0] || null
+
+  if (!file) return
+
+  setUploadImageFile(file)
+}
+
+function handleImageDrop(event: DragEvent) {
+  const file = event.dataTransfer?.files?.[0] || null
+
+  if (!file) return
+
+  setUploadImageFile(file)
+}
+
+function setUploadImageFile(file: File) {
+  imageErrorMessage.value = ''
+
+  const validation = validateImageFile(file)
+  if (validation) {
+    imageErrorMessage.value = validation
+    return
+  }
+
+  clearUploadObjectUrl()
+
+  uploadImageFile.value = file
+  uploadObjectUrl = URL.createObjectURL(file)
+  uploadImagePreviewUrl.value = uploadObjectUrl
+}
+
+function clearUploadImage() {
+  uploadImageFile.value = null
+  uploadImagePreviewUrl.value = ''
+  imageErrorMessage.value = ''
+  clearUploadObjectUrl()
+
+  if (imageFileInput.value) {
+    imageFileInput.value.value = ''
+  }
+}
+
+function clearUploadObjectUrl() {
+  if (uploadObjectUrl) {
+    URL.revokeObjectURL(uploadObjectUrl)
+    uploadObjectUrl = ''
+  }
+}
+
+function validateImageFile(file: File) {
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+
+  if (!allowedTypes.includes(file.type)) {
+    return 'Gunakan gambar JPG, PNG, atau WebP.'
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    return 'Ukuran gambar maksimal 5MB.'
+  }
+
+  return ''
+}
+
+function queueImageLinkValidation() {
+  if (imageLinkTimer) {
+    clearTimeout(imageLinkTimer)
+  }
+
+  imageLinkTimer = setTimeout(() => {
+    validateImageLinkNow()
+  }, 350)
+}
+
+async function validateImageLinkNow() {
+  const raw = imageLinkUrl.value.trim()
+
+  if (!raw) {
+    imageLinkStatus.value = 'idle'
+    imageLinkPreviewSrc.value = ''
+    return
+  }
+
+  const url = normalizeUrl(raw)
+
+  if (!isValidHttpUrl(url)) {
+    imageLinkStatus.value = 'invalid'
+    imageLinkPreviewSrc.value = ''
+    return
+  }
+
+  const token = ++imageLinkValidationToken
+
+  imageLinkStatus.value = 'checking'
+  imageLinkPreviewSrc.value = ''
+
+  const valid = await imageExists(url)
+
+  if (token !== imageLinkValidationToken) return
+
+  if (valid) {
+    imageLinkStatus.value = 'valid'
+    imageLinkPreviewSrc.value = url
+  } else {
+    imageLinkStatus.value = 'invalid'
+    imageLinkPreviewSrc.value = ''
+  }
+}
+
+function imageExists(url: string) {
+  return new Promise<boolean>((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve(false)
+      return
+    }
+
+    const image = new window.Image()
+    const timer = window.setTimeout(() => {
+      image.onload = null
+      image.onerror = null
+      resolve(false)
+    }, 8000)
+
+    image.onload = () => {
+      window.clearTimeout(timer)
+      resolve(true)
+    }
+
+    image.onerror = () => {
+      window.clearTimeout(timer)
+      resolve(false)
+    }
+
+    image.src = url
+  })
+}
+
+function closeImageValidation() {
+  if (imageLinkTimer) {
+    clearTimeout(imageLinkTimer)
+    imageLinkTimer = null
+  }
+
+  imageLinkValidationToken += 1
+}
+
+async function insertImage() {
+  imageErrorMessage.value = ''
+
+  if (imageSourceMode.value === 'upload') {
+    await insertUploadedImage()
+    return
+  }
+
+  await insertLinkedImage()
+}
+
+async function insertUploadedImage() {
+  const file = uploadImageFile.value
+  if (!file) return
+
+  const validation = validateImageFile(file)
+  if (validation) {
+    imageErrorMessage.value = validation
+    return
+  }
+
+  try {
+    imageUploading.value = true
+
+    const result = await uploadImageWithComposable(file)
+    const url = getUploadedUrl(result)
+
+    if (!url) {
+      throw new Error('URL gambar tidak ditemukan.')
+    }
+
+    editor.value?.chain().focus().setImage({
+      src: url,
+      alt: imageAlt.value.trim() || file.name || 'Gambar'
+    }).run()
+
+    resetImageForm()
+    closeTooltip()
+  } catch (error: any) {
+    imageErrorMessage.value =
+      error?.message ||
+      getUploadErrorMessage() ||
+      'Gambar belum bisa diunggah.'
+  } finally {
+    imageUploading.value = false
+  }
+}
+
+async function uploadImageWithComposable(file: File) {
+  const method =
+    uploader?.uploadImage ||
+    uploader?.uploadFile ||
+    uploader?.upload
+
+  if (typeof method !== 'function') {
+    throw new Error('Fitur upload gambar belum tersedia.')
+  }
+
+  return await method(file, {
+    folder: 'richtext/images',
+    maxWidth: 1600,
+    maxHeight: 1600,
+    quality: 0.85,
+    maxBytes: 5 * 1024 * 1024
+  })
+}
+
+function getUploadErrorMessage() {
+  const error = uploader?.uploadError
+
+  if (!error) return ''
+
+  if (typeof error === 'string') return error
+  if (typeof error?.value === 'string') return error.value
+  if (typeof error?.message === 'string') return error.message
+
+  return ''
+}
+
+async function insertLinkedImage() {
+  if (imageLinkStatus.value !== 'valid' || !imageLinkPreviewSrc.value) {
+    await validateImageLinkNow()
+  }
+
+  if (imageLinkStatus.value !== 'valid' || !imageLinkPreviewSrc.value) {
+    imageErrorMessage.value = 'Gambar invalid'
+    return
+  }
+
+  editor.value?.chain().focus().setImage({
+    src: imageLinkPreviewSrc.value,
+    alt: imageAlt.value.trim() || 'Gambar'
+  }).run()
+
+  resetImageForm()
+  closeTooltip()
+}
+
+function getUploadedUrl(response: any) {
+  return String(
+    response?.secure_url ||
+      response?.secureUrl ||
+      response?.url ||
+      response?.data?.secure_url ||
+      response?.data?.secureUrl ||
+      response?.data?.url ||
+      ''
+  ).trim()
+}
+
+function resetImageForm() {
+  clearUploadImage()
+  imageLinkUrl.value = ''
+  imageLinkPreviewSrc.value = ''
+  imageLinkStatus.value = 'idle'
+  imageAlt.value = ''
+  imageErrorMessage.value = ''
+}
+
+function insertEmbed() {
   const url = normalizeUrl(embedUrl.value)
 
   if (!url) return
-
-  if (embedType.value === 'image') {
-    editor.value?.chain().focus().setImage({
-      src: url,
-      alt: 'Task image'
-    }).run()
-  }
 
   if (embedType.value === 'pdf') {
     editor.value?.chain().focus().insertContent({
@@ -892,12 +1331,14 @@ const insertEmbed = () => {
   closeTooltip()
 }
 
-const handleOutsideClick = (event: MouseEvent) => {
+function handleOutsideClick(event: MouseEvent) {
   const target = event.target as HTMLElement
   const container = containerRef.value
+  const tooltip = tooltipRef.value
 
-  if (!container || !showTooltip.value) return
-  if (container.contains(target)) return
+  if (!showTooltip.value) return
+  if (container?.contains(target)) return
+  if (tooltip?.contains(target)) return
 
   closeTooltip()
 }
@@ -915,6 +1356,16 @@ watch(
   }
 )
 
+watch(
+  imageLinkUrl,
+  () => {
+    if (imageSourceMode.value !== 'link') return
+
+    imageLinkStatus.value = imageLinkUrl.value.trim() ? 'checking' : 'idle'
+    queueImageLinkValidation()
+  }
+)
+
 onMounted(() => {
   createEditor()
   document.addEventListener('click', handleOutsideClick)
@@ -922,6 +1373,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearLongPress()
+  closeImageValidation()
+  clearUploadObjectUrl()
   document.removeEventListener('click', handleOutsideClick)
   editor.value?.destroy()
 })
