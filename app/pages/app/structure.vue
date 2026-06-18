@@ -52,6 +52,19 @@
             Reset View
           </button>
 
+          <button type="button" class="topbar-button" @click="toggleBlockListMode">
+            <Icon
+              :icon="blockListModeOpen ? 'solar:list-check-bold-duotone' : 'solar:list-bold-duotone'"
+              class="h-4 w-4"
+            />
+            Card List
+          </button>
+
+          <button type="button" class="topbar-button" @click="openQuickBlockModal()">
+            <Icon icon="solar:add-circle-bold-duotone" class="h-4 w-4" />
+            Tambah Block
+          </button>
+
           <div class="relative">
             <button type="button" class="topbar-button" @click="toggleExportMenu">
               <Icon icon="solar:export-bold-duotone" class="h-4 w-4" />
@@ -103,7 +116,7 @@
           class="relative min-h-[calc(100vh-7.5rem)] overflow-hidden rounded-[2rem] border border-white/70 bg-white/85 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur-xl"
           @dragover.prevent
           @drop="onCanvasDrop"
-          @contextmenu.prevent="openCanvasToolMenu"
+          @contextmenu.prevent="openCanvasContextMenu"
         >
           <div class="pointer-events-none absolute inset-0 canvas-grid"></div>
 
@@ -124,6 +137,81 @@
               Pilih node tujuan
             </div>
           </div>
+
+          <Transition name="block-list">
+            <aside
+              v-if="blockListModeOpen"
+              class="absolute bottom-4 left-4 z-30 w-[min(380px,calc(100%-2rem))] overflow-hidden rounded-[1.6rem] border border-white/80 bg-white/95 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl"
+            >
+              <header class="flex items-center justify-between gap-3 border-b border-neutral-100 px-4 py-3">
+                <div class="min-w-0">
+                  <p class="text-xs font-black uppercase tracking-[0.14em] text-blue-600">Card List Block</p>
+                  <p class="truncate text-sm font-black text-neutral-950">{{ nodes.length }} data struktur</p>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    class="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+                    aria-label="Tambah block"
+                    @click="openQuickBlockModal()"
+                  >
+                    <Icon icon="solar:add-circle-bold-duotone" class="h-5 w-5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    class="grid h-9 w-9 place-items-center rounded-xl border border-neutral-200 text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-900"
+                    aria-label="Tutup card list"
+                    @click="blockListModeOpen = false"
+                  >
+                    <Icon icon="solar:close-circle-bold-duotone" class="h-5 w-5" />
+                  </button>
+                </div>
+              </header>
+
+              <div class="max-h-[min(46vh,420px)] space-y-2 overflow-y-auto p-3">
+                <button
+                  v-if="!nodes.length"
+                  type="button"
+                  class="block-list-empty"
+                  @click="openQuickBlockModal()"
+                >
+                  <Icon icon="solar:user-plus-rounded-bold-duotone" class="h-6 w-6 text-blue-600" />
+                  <span class="text-sm font-black text-neutral-950">Tambah data pertama</span>
+                </button>
+
+                <button
+                  v-for="node in sortedBlockList"
+                  :key="`block-list-${node.id}`"
+                  type="button"
+                  class="block-list-card"
+                  :class="selectedNodeId === node.id ? 'border-blue-200 bg-blue-50/80 shadow-blue-600/10' : 'border-neutral-200 bg-white hover:border-blue-100 hover:bg-blue-50/40'"
+                  @click="focusNodeFromList(node)"
+                >
+                  <span class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-blue-50 text-sm font-black text-blue-700 ring-1 ring-blue-100">
+                    <img
+                      v-if="node.photoUrl"
+                      :src="node.photoUrl"
+                      :alt="node.name"
+                      class="h-full w-full object-cover"
+                    >
+                    <span v-else>{{ nodeInitials(node.name) }}</span>
+                  </span>
+
+                  <span class="min-w-0 flex-1 text-left">
+                    <span class="block truncate text-sm font-black text-neutral-950">{{ node.name }}</span>
+                    <span class="block truncate text-xs font-bold text-neutral-500">{{ node.positionTitle }}</span>
+                  </span>
+
+                  <span class="grid shrink-0 grid-cols-2 gap-1 text-[10px] font-black text-neutral-500">
+                    <span class="rounded-lg bg-neutral-100 px-1.5 py-1">V{{ nodeGridVertical(node) }}</span>
+                    <span class="rounded-lg bg-neutral-100 px-1.5 py-1">H{{ nodeGridHorizontal(node) }}</span>
+                  </span>
+                </button>
+              </div>
+            </aside>
+          </Transition>
 
           <ClientOnly>
             <v-stage
@@ -280,9 +368,338 @@
             </aside>
           </Transition>
 
+          <Transition name="context-menu">
+            <aside
+              v-if="contextMenu.open"
+              class="fixed z-[86] w-60 overflow-hidden rounded-[1.25rem] border border-neutral-200 bg-white/95 p-1.5 shadow-[0_24px_80px_rgba(15,23,42,0.18)] backdrop-blur-xl"
+              :style="contextMenuStyle"
+              @click.stop
+              @mousedown.stop
+              @contextmenu.prevent.stop
+            >
+              <div class="border-b border-neutral-100 px-3 py-2">
+                <p class="text-[11px] font-black uppercase tracking-[0.14em] text-blue-600">
+                  {{ contextMenuEyebrow }}
+                </p>
+                <p class="mt-0.5 truncate text-sm font-black text-neutral-950">
+                  {{ contextMenuTitle }}
+                </p>
+              </div>
+
+              <div class="py-1">
+                <button
+                  v-if="contextMenu.kind === 'canvas'"
+                  type="button"
+                  class="context-menu-button"
+                  @click="addBlockFromContextMenu"
+                >
+                  <Icon icon="solar:add-circle-bold-duotone" class="h-4 w-4" />
+                  Tambah Block
+                </button>
+
+                <button
+                  v-if="contextMenu.kind !== 'canvas'"
+                  type="button"
+                  class="context-menu-button"
+                  @click="editContextMenuTarget"
+                >
+                  <Icon icon="solar:settings-bold-duotone" class="h-4 w-4" />
+                  Edit
+                </button>
+
+                <button
+                  v-if="contextMenu.kind === 'node'"
+                  type="button"
+                  class="context-menu-button"
+                  @click="copyContextMenuNode"
+                >
+                  <Icon icon="solar:copy-bold-duotone" class="h-4 w-4" />
+                  Copy Block
+                </button>
+
+                <button
+                  v-if="contextMenu.kind === 'node'"
+                  type="button"
+                  class="context-menu-button"
+                  @click="duplicateContextMenuNode"
+                >
+                  <Icon icon="solar:copy-bold-duotone" class="h-4 w-4" />
+                  Duplikat
+                </button>
+
+                <button
+                  v-if="contextMenu.kind !== 'canvas'"
+                  type="button"
+                  class="context-menu-button context-menu-button-danger"
+                  @click="deleteContextMenuTarget"
+                >
+                  <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" />
+                  Hapus
+                </button>
+              </div>
+            </aside>
+          </Transition>
+
         </div>
       </div>
     </section>
+
+    <!-- Quick Block Modal -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div
+          v-if="quickBlockModalOpen"
+          class="fixed inset-0 z-[89] flex items-center justify-center bg-neutral-950/50 p-4 backdrop-blur-sm"
+          @mousedown.self="closeQuickBlockModal"
+        >
+          <section class="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-2xl">
+            <header class="flex items-start justify-between gap-4 border-b border-neutral-100 bg-gradient-to-br from-blue-50 via-white to-white p-5">
+              <div class="min-w-0">
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-600">
+                  Struktur Organisasi
+                </p>
+                <h3 class="mt-1 text-xl font-black text-neutral-950">
+                  Tambah Anggota Struktur
+                </h3>
+                <p class="mt-1 text-sm font-medium leading-6 text-neutral-500">
+                  Isi data utama, lalu pilih relasi bila diperlukan. Posisi kartu akan diatur otomatis.
+                </p>
+              </div>
+
+              <button type="button" class="modal-close shrink-0" aria-label="Tutup form" @click="closeQuickBlockModal">
+                <Icon icon="solar:close-circle-bold-duotone" class="h-5 w-5" />
+              </button>
+            </header>
+
+            <form class="flex min-h-0 flex-1 flex-col" novalidate @submit.prevent="submitQuickBlock">
+              <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+                <div
+                  class="flex items-start gap-3 rounded-2xl border p-4"
+                  :class="quickBlockRelationState === 'empty'
+                    ? 'border-amber-200 bg-amber-50 text-amber-950'
+                    : 'border-blue-100 bg-blue-50 text-blue-950'"
+                  role="status"
+                >
+                  <span
+                    class="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+                    :class="quickBlockRelationState === 'empty' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'"
+                  >
+                    <Icon :icon="quickBlockGuidanceIcon" class="h-5 w-5" />
+                  </span>
+                  <div class="min-w-0">
+                    <p class="text-sm font-black">{{ quickBlockGuidanceTitle }}</p>
+                    <p class="mt-1 text-xs font-semibold leading-5 opacity-75">
+                      {{ quickBlockGuidanceDescription }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <label class="field-label sm:col-span-2">
+                    <span>Foto <small class="font-bold text-neutral-400">(opsional)</small></span>
+                    <div class="mt-2 flex gap-2">
+                      <input
+                        v-model.trim="quickBlockForm.photoUrl"
+                        type="url"
+                        class="input-field"
+                        :class="{ 'input-field-error': shouldShowQuickBlockError('photoUrl') }"
+                        placeholder="Tempel URL foto atau unggah file"
+                        aria-describedby="quick-photo-help quick-photo-error"
+                        @input="clearQuickBlockFieldError('photoUrl')"
+                      >
+                      <button
+                        type="button"
+                        class="secondary-button shrink-0 px-4"
+                        aria-label="Unggah foto"
+                        @click="triggerQuickBlockPhoto"
+                      >
+                        <Icon icon="solar:upload-bold-duotone" class="h-4 w-4" />
+                        <span class="hidden sm:inline">Unggah</span>
+                      </button>
+                    </div>
+                    <p
+                      v-if="shouldShowQuickBlockError('photoUrl')"
+                      id="quick-photo-error"
+                      class="field-error"
+                    >
+                      <Icon icon="solar:danger-triangle-bold-duotone" class="h-4 w-4" />
+                      {{ quickBlockErrors.photoUrl }}
+                    </p>
+                    <p v-else id="quick-photo-help" class="field-help">Gunakan URL HTTPS, atau unggah JPG, PNG, dan WebP maksimal 5 MB.</p>
+                  </label>
+
+                  <label class="field-label">
+                    <span>Nama <small class="font-black text-red-500">*</small></span>
+                    <input
+                      v-model.trim="quickBlockForm.name"
+                      type="text"
+                      class="input-field"
+                      :class="{ 'input-field-error': shouldShowQuickBlockError('name') }"
+                      placeholder="Contoh: Budi Santoso"
+                      maxlength="120"
+                      autocomplete="off"
+                      autofocus
+                      aria-describedby="quick-name-help quick-name-error"
+                      @input="clearQuickBlockFieldError('name')"
+                    >
+                    <p
+                      v-if="shouldShowQuickBlockError('name')"
+                      id="quick-name-error"
+                      class="field-error"
+                    >
+                      <Icon icon="solar:danger-triangle-bold-duotone" class="h-4 w-4" />
+                      {{ quickBlockErrors.name }}
+                    </p>
+                    <p v-else id="quick-name-help" class="field-help">Wajib diisi, minimal 2 karakter.</p>
+                  </label>
+
+                  <label class="field-label">
+                    <span>Jabatan <small class="font-black text-red-500">*</small></span>
+                    <select v-model="quickBlockForm.positionTitle" class="input-field">
+                      <option
+                        v-for="item in organizationPositionOptions"
+                        :key="item.value"
+                        :value="item.value"
+                      >
+                        {{ item.label }}
+                      </option>
+                    </select>
+                    <p class="field-help">Pilih jabatan yang paling sesuai.</p>
+                  </label>
+                </div>
+
+                <fieldset class="rounded-[1.4rem] border border-neutral-200 bg-neutral-50/70 p-4">
+                  <legend class="px-2 text-sm font-black text-neutral-900">Hubungan dalam struktur</legend>
+                  <p class="mb-4 text-xs font-semibold leading-5 text-neutral-500">
+                    Keduanya opsional saat tersedia. Pilihan ini membantu sistem menyusun posisi kartu secara otomatis.
+                  </p>
+
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <label class="field-label">
+                      <span class="flex items-center justify-between gap-2">
+                        <span class="flex items-center gap-2">
+                          <Icon icon="solar:user-down-rounded-bold-duotone" class="h-4 w-4 text-blue-600" />
+                          Atasan
+                        </span>
+                        <small class="rounded-full bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wide text-neutral-400 ring-1 ring-neutral-200">
+                          Opsional
+                        </small>
+                      </span>
+                      <select
+                        v-model="quickBlockForm.supervisorId"
+                        class="input-field"
+                        :class="{ 'input-field-error': shouldShowQuickBlockError('supervisorId') }"
+                        :disabled="quickBlockSupervisorReadonly"
+                        :aria-readonly="quickBlockSupervisorReadonly"
+                        aria-describedby="quick-supervisor-help quick-supervisor-error"
+                        @change="clearQuickBlockFieldError('supervisorId')"
+                      >
+                        <option value="">Tidak memilih atasan</option>
+                        <option
+                          v-for="node in quickBlockRelationOptions"
+                          :key="`supervisor-${node.id}`"
+                          :value="node.id"
+                          :disabled="node.id === quickBlockForm.colleagueId"
+                        >
+                          {{ relationOptionLabel(node) }}
+                        </option>
+                      </select>
+                      <p
+                        v-if="shouldShowQuickBlockError('supervisorId')"
+                        id="quick-supervisor-error"
+                        class="field-error"
+                      >
+                        <Icon icon="solar:danger-triangle-bold-duotone" class="h-4 w-4" />
+                        {{ quickBlockErrors.supervisorId }}
+                      </p>
+                      <p v-else id="quick-supervisor-help" class="field-help">
+                        {{ quickBlockSupervisorHelp }}
+                      </p>
+                    </label>
+
+                    <label class="field-label">
+                      <span class="flex items-center justify-between gap-2">
+                        <span class="flex items-center gap-2">
+                          <Icon icon="solar:users-group-rounded-bold-duotone" class="h-4 w-4 text-violet-600" />
+                          Kolega
+                        </span>
+                        <small class="rounded-full bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wide text-neutral-400 ring-1 ring-neutral-200">
+                          Opsional
+                        </small>
+                      </span>
+                      <select
+                        v-model="quickBlockForm.colleagueId"
+                        class="input-field"
+                        :class="{ 'input-field-error': shouldShowQuickBlockError('colleagueId') }"
+                        :disabled="quickBlockColleagueReadonly"
+                        :aria-readonly="quickBlockColleagueReadonly"
+                        aria-describedby="quick-colleague-help quick-colleague-error"
+                        @change="clearQuickBlockFieldError('colleagueId')"
+                      >
+                        <option value="">Tidak memilih kolega</option>
+                        <option
+                          v-for="node in quickBlockRelationOptions"
+                          :key="`colleague-${node.id}`"
+                          :value="node.id"
+                          :disabled="node.id === quickBlockForm.supervisorId"
+                        >
+                          {{ relationOptionLabel(node) }}
+                        </option>
+                      </select>
+                      <p
+                        v-if="shouldShowQuickBlockError('colleagueId')"
+                        id="quick-colleague-error"
+                        class="field-error"
+                      >
+                        <Icon icon="solar:danger-triangle-bold-duotone" class="h-4 w-4" />
+                        {{ quickBlockErrors.colleagueId }}
+                      </p>
+                      <p v-else id="quick-colleague-help" class="field-help">
+                        {{ quickBlockColleagueHelp }}
+                      </p>
+                    </label>
+                  </div>
+
+                  <div
+                    v-if="quickBlockForm.supervisorId || quickBlockForm.colleagueId"
+                    class="mt-4 flex items-start gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2.5 text-xs font-bold leading-5 text-emerald-800"
+                  >
+                    <Icon icon="solar:magic-stick-3-bold-duotone" class="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{{ quickBlockPlacementSummary }}</span>
+                  </div>
+                </fieldset>
+              </div>
+
+              <footer class="flex flex-col-reverse gap-3 border-t border-neutral-100 bg-neutral-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <label class="inline-flex cursor-pointer items-center gap-2 text-sm font-black text-neutral-600">
+                  <input v-model="quickBlockForm.autoSave" type="checkbox" class="sr-only">
+                  <span
+                    class="grid h-5 w-5 place-items-center rounded-md border transition"
+                    :class="quickBlockForm.autoSave ? 'border-blue-600 bg-blue-600 text-white' : 'border-neutral-300 bg-white text-transparent'"
+                  >
+                    <Icon icon="solar:check-bold" class="h-3.5 w-3.5" />
+                  </span>
+                  Simpan otomatis
+                </label>
+
+                <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button type="button" class="secondary-button" @click="closeQuickBlockModal">
+                    Batal
+                  </button>
+                  <button type="submit" class="primary-button" :disabled="isSaving">
+                    <Icon
+                      :icon="isSaving ? 'svg-spinners:180-ring' : 'solar:add-circle-bold-duotone'"
+                      class="h-4 w-4"
+                    />
+                    {{ quickBlockForm.autoSave ? 'Tambah & Simpan' : 'Tambah Anggota' }}
+                  </button>
+                </div>
+              </footer>
+            </form>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- Action Modal -->
     <Teleport to="body">
@@ -782,6 +1199,13 @@ type AnchorKey =
   | 'bottomRight'
 type ToastType = 'success' | 'error'
 type DeleteKind = 'node' | 'edge'
+type ContextMenuKind = DeleteKind | 'canvas'
+type QuickBlockRelationState = 'empty' | 'single' | 'ready'
+type QuickBlockErrorField = 'photoUrl' | 'name' | 'supervisorId' | 'colleagueId'
+type GridPosition = {
+  vertical: number
+  horizontal: number
+}
 
 type DiagramNode = {
   id: string
@@ -898,6 +1322,8 @@ const isLoading = ref(false)
 const isSaving = ref(false)
 const exportMenuOpen = ref(false)
 const hasUnsavedChanges = ref(false)
+const blockListModeOpen = ref(false)
+const quickBlockModalOpen = ref(false)
 
 const selectedNodeId = ref('')
 const selectedEdgeId = ref('')
@@ -921,9 +1347,6 @@ const tempLine = ref<null | { sourceNodeId: string; sourceAnchor: AnchorKey; x: 
 
 const toolMenuVisible = ref(true)
 const toolMenuHover = ref(false)
-const toolMenuContextMode = ref(false)
-const toolMenuX = ref(0)
-const toolMenuY = ref(0)
 
 let toolMenuTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -931,6 +1354,14 @@ const actionModal = reactive({
   open: false,
   kind: 'node' as DeleteKind,
   targetId: ''
+})
+
+const contextMenu = reactive({
+  open: false,
+  kind: 'canvas' as ContextMenuKind,
+  targetId: '',
+  x: 0,
+  y: 0
 })
 
 const deleteModal = reactive({
@@ -942,9 +1373,11 @@ const deleteModal = reactive({
 const nodeSettingsOpen = ref(false)
 const edgeSettingsOpen = ref(false)
 const textEditorOpen = ref(false)
+const quickBlockSubmitted = ref(false)
 const nodeFormId = ref('')
 const edgeFormId = ref('')
 const pendingPhotoNodeId = ref('')
+const pendingPhotoTarget = ref<'node' | 'quick'>('node')
 const textFormNodeId = ref('')
 const textFormField = ref<'name' | 'positionTitle'>('name')
 
@@ -980,6 +1413,22 @@ const nodeForm = reactive({
   height: 124
 })
 
+const quickBlockForm = reactive({
+  photoUrl: '',
+  name: '',
+  positionTitle: 'Ketua',
+  supervisorId: '',
+  colleagueId: '',
+  autoSave: true
+})
+
+const quickBlockErrors = reactive<Record<QuickBlockErrorField, string>>({
+  photoUrl: '',
+  name: '',
+  supervisorId: '',
+  colleagueId: ''
+})
+
 const edgeForm = reactive({
   label: '',
   lineType: 'orthogonal' as 'orthogonal' | 'straight' | 'bezier' | 'manual',
@@ -1007,6 +1456,28 @@ const tools = [
   { value: 'text' as ToolType, label: 'Text', icon: 'solar:text-bold-duotone' }
 ]
 
+const organizationPositionOptions = [
+  { value: 'Ketua', label: 'Ketua' },
+  { value: 'Wakil', label: 'Wakil' },
+  { value: 'Manager', label: 'Manager' },
+  { value: 'Sekretaris', label: 'Sekretaris' },
+  { value: 'Kaur', label: 'Kaur' },
+  { value: 'Kasi', label: 'Kasi' },
+  { value: 'Bendahara', label: 'Bendahara' },
+  { value: 'Staff', label: 'Staff' },
+  { value: 'Kepala Dusun', label: 'Kepala Dusun' },
+  { value: 'Kepala Camat', label: 'Kepala Camat' }
+]
+
+const positionIndexOptions = Array.from({ length: 10 }, (_, index) => index + 1)
+
+const structureGrid = {
+  startX: 120,
+  startY: 90,
+  gapX: 300,
+  gapY: 170
+}
+
 const hostname = computed(() => String(requestUrl.hostname || '').replace(/^www\./, '').toLowerCase())
 const envClientName = computed(() => String(runtime.public.clientName || 'martopuro').trim().toLowerCase())
 
@@ -1027,19 +1498,124 @@ const textFieldLabel = computed(() => {
   return textFormField.value === 'name' ? 'Nama' : 'Jabatan'
 })
 
-const toolMenuStyle = computed(() => {
-  if (toolMenuContextMode.value) {
-    return {
-      left: `${toolMenuX.value}px`,
-      top: `${toolMenuY.value}px`
-    }
+const quickBlockRelationState = computed<QuickBlockRelationState>(() => {
+  if (!nodes.value.length) return 'empty'
+  if (nodes.value.length === 1) return 'single'
+  return 'ready'
+})
+
+const quickBlockSupervisorReadonly = computed(() => quickBlockRelationState.value === 'empty')
+const quickBlockColleagueReadonly = computed(() => quickBlockRelationState.value !== 'ready')
+
+const quickBlockRelationOptions = computed(() => {
+  return [...nodes.value].sort((left, right) => {
+    const positionDiff = nodeGridVertical(left) - nodeGridVertical(right)
+    if (positionDiff) return positionDiff
+    return left.name.localeCompare(right.name, 'id')
+  })
+})
+
+const quickBlockGuidanceIcon = computed(() => {
+  if (quickBlockRelationState.value === 'empty') return 'solar:flag-2-bold-duotone'
+  if (quickBlockRelationState.value === 'single') return 'solar:branching-paths-down-bold-duotone'
+  return 'solar:users-group-rounded-bold-duotone'
+})
+
+const quickBlockGuidanceTitle = computed(() => {
+  if (quickBlockRelationState.value === 'empty') return 'Ini adalah data pertama'
+  if (quickBlockRelationState.value === 'single') return 'Atasan sudah dapat dipilih'
+  return 'Relasi dapat dipilih sesuai kebutuhan'
+})
+
+const quickBlockGuidanceDescription = computed(() => {
+  if (quickBlockRelationState.value === 'empty') {
+    return 'Atasan dan kolega belum tersedia. Data ini otomatis menjadi titik awal struktur.'
   }
 
+  if (quickBlockRelationState.value === 'single') {
+    return 'Atasan bersifat opsional. Kolega baru dapat dipilih setelah struktur memiliki minimal dua data.'
+  }
+
+  return 'Atasan dan kolega sama-sama opsional. Kosongkan bila hubungan belum diketahui.'
+})
+
+const quickBlockSupervisorHelp = computed(() => {
+  if (quickBlockSupervisorReadonly.value) return 'Belum dapat dipilih karena struktur masih kosong.'
+  return 'Pilih orang yang membawahi anggota ini. Sistem akan membuat garis hierarki.'
+})
+
+const quickBlockColleagueHelp = computed(() => {
+  if (quickBlockColleagueReadonly.value) {
+    return nodes.value.length
+      ? 'Tersedia setelah struktur memiliki minimal dua data.'
+      : 'Belum dapat dipilih karena struktur masih kosong.'
+  }
+
+  return 'Pilih rekan setingkat agar kartu baru ditempatkan sejajar.'
+})
+
+const quickBlockPlacementSummary = computed(() => {
+  const supervisor = selectedRelationNode(quickBlockForm.supervisorId)
+  const colleague = selectedRelationNode(quickBlockForm.colleagueId)
+
+  if (supervisor && colleague) {
+    return `Kartu akan ditempatkan sejajar dengan ${colleague.name} dan dihubungkan ke ${supervisor.name} sebagai atasan.`
+  }
+
+  if (supervisor) {
+    return `Kartu akan ditempatkan di bawah ${supervisor.name} dan garis hierarki dibuat otomatis.`
+  }
+
+  if (colleague) {
+    const inheritedSupervisor = selectedRelationNode(colleague.parentId || '')
+    return inheritedSupervisor
+      ? `Kartu akan ditempatkan sejajar dengan ${colleague.name} dan mengikuti atasan ${inheritedSupervisor.name}.`
+      : `Kartu akan ditempatkan sejajar dengan ${colleague.name}.`
+  }
+
+  return 'Sistem akan memilih ruang kosong yang paling sesuai.'
+})
+
+const sortedBlockList = computed(() => {
+  return [...nodes.value].sort((left, right) => {
+    const verticalDiff = nodeGridVertical(left) - nodeGridVertical(right)
+    if (verticalDiff) return verticalDiff
+
+    const horizontalDiff = nodeGridHorizontal(left) - nodeGridHorizontal(right)
+    if (horizontalDiff) return horizontalDiff
+
+    return left.sortOrder - right.sortOrder
+  })
+})
+
+const toolMenuStyle = computed(() => {
   return {
     right: '1rem',
     top: '50%',
     transform: 'translateY(-50%)'
   }
+})
+
+const contextMenuStyle = computed(() => ({
+  left: `${contextMenu.x}px`,
+  top: `${contextMenu.y}px`
+}))
+
+const contextMenuEyebrow = computed(() => {
+  if (contextMenu.kind === 'node') return 'Block'
+  if (contextMenu.kind === 'edge') return 'Line'
+  return 'Canvas'
+})
+
+const contextMenuTitle = computed(() => {
+  if (contextMenu.kind === 'node') {
+    const node = nodes.value.find((item) => item.id === contextMenu.targetId)
+    return node ? node.name : 'Block Organisasi'
+  }
+
+  if (contextMenu.kind === 'edge') return 'Garis Relasi'
+
+  return 'Menu Canvas'
 })
 
 const stageConfig = computed(() => ({
@@ -1241,8 +1817,10 @@ function deleteSelectedItem() {
     nodeSettingsOpen.value ||
     edgeSettingsOpen.value ||
     textEditorOpen.value ||
+    quickBlockModalOpen.value ||
     deleteModal.open ||
-    actionModal.open
+    actionModal.open ||
+    contextMenu.open
   ) {
     return
   }
@@ -1262,8 +1840,9 @@ function cancelAllActions() {
   lineSource.value = null
   tempLine.value = null
   actionModal.open = false
+  contextMenu.open = false
+  quickBlockModalOpen.value = false
   exportMenuOpen.value = false
-  toolMenuContextMode.value = false
   selectedEdgeId.value = ''
   selectedNodeId.value = ''
   hoveredNodeId.value = ''
@@ -1291,7 +1870,6 @@ function showToolMenu() {
   toolMenuTimer = setTimeout(() => {
     if (!toolMenuHover.value && activeTool.value === 'select') {
       toolMenuVisible.value = false
-      toolMenuContextMode.value = false
     }
   }, 5000)
 }
@@ -1301,23 +1879,37 @@ function onToolMenuLeave() {
   showToolMenu()
 }
 
-function openCanvasToolMenu(event: MouseEvent) {
+function openContextMenu(kind: ContextMenuKind, targetId: string, event: { clientX: number; clientY: number }) {
   closeFloatingMenus()
+  closeNodeSettings()
+  closeEdgeSettings()
+  closeTextEditor()
 
-  toolMenuContextMode.value = true
-  toolMenuX.value = clamp(event.clientX, 12, window.innerWidth - 80)
-  toolMenuY.value = clamp(event.clientY, 12, window.innerHeight - 180)
+  contextMenu.kind = kind
+  contextMenu.targetId = targetId
+  contextMenu.x = clamp(event.clientX, 12, window.innerWidth - 260)
+  contextMenu.y = clamp(event.clientY, 12, window.innerHeight - 260)
+  contextMenu.open = true
+
   toolMenuVisible.value = true
-  showToolMenu()
+}
+
+function closeContextMenu() {
+  contextMenu.open = false
+}
+
+function openCanvasContextMenu(event: MouseEvent) {
+  openContextMenu('canvas', '', event)
 }
 
 function onKonvaStageContextMenu(event: any) {
   event.evt.preventDefault()
+  event.evt.stopPropagation?.()
 
   const stage = stageRef.value?.getStage?.()
   if (event.target !== stage) return
 
-  openCanvasToolMenu(event.evt)
+  openContextMenu('canvas', '', event.evt)
 }
 
 async function loadInitialChart() {
@@ -1480,8 +2072,7 @@ function handleToolClick(tool: ToolType) {
   activeTool.value = tool
 
   if (tool === 'block') {
-    const center = screenToCanvas(stageWidth.value / 2, stageHeight.value / 2)
-    createNodeAt(center.x - 120, center.y - 62)
+    openQuickBlockModal()
     activeTool.value = 'select'
   }
 
@@ -1501,16 +2092,329 @@ function onToolDragEnd() {
 function onCanvasDrop(event: DragEvent) {
   const tool = event.dataTransfer?.getData('tool') as ToolType
   if (tool !== 'block') return
-
-  const rect = stageShell.value?.getBoundingClientRect()
-  const point = screenToCanvas(
-    event.clientX - Number(rect?.left || 0),
-    event.clientY - Number(rect?.top || 0)
-  )
-
-  createNodeAt(point.x - 120, point.y - 62)
+  openQuickBlockModal()
   isDraggingTool.value = false
   activeTool.value = 'select'
+}
+
+function toggleBlockListMode() {
+  blockListModeOpen.value = !blockListModeOpen.value
+}
+
+function openQuickBlockModal() {
+  closeFloatingMenus()
+  closeNodeSettings()
+  closeEdgeSettings()
+  closeTextEditor()
+
+  quickBlockForm.photoUrl = ''
+  quickBlockForm.name = ''
+  quickBlockForm.positionTitle = 'Ketua'
+  quickBlockForm.supervisorId = ''
+  quickBlockForm.colleagueId = ''
+  quickBlockForm.autoSave = true
+  quickBlockSubmitted.value = false
+  clearQuickBlockErrors()
+
+  quickBlockModalOpen.value = true
+  blockListModeOpen.value = true
+}
+
+function closeQuickBlockModal() {
+  quickBlockModalOpen.value = false
+  quickBlockSubmitted.value = false
+}
+
+async function submitQuickBlock() {
+  if (isSaving.value) return
+
+  quickBlockSubmitted.value = true
+
+  if (!validateQuickBlockForm()) {
+    await nextTick()
+    const firstInvalidField = document.querySelector<HTMLElement>('.input-field-error:not(:disabled)')
+    firstInvalidField?.focus()
+    return
+  }
+
+  const name = cleanString(quickBlockForm.name)
+  const supervisor = selectedRelationNode(quickBlockForm.supervisorId)
+  const colleague = selectedRelationNode(quickBlockForm.colleagueId)
+  const inheritedSupervisor = !supervisor && colleague
+    ? selectedRelationNode(colleague.parentId || '')
+    : null
+  const effectiveSupervisor = supervisor || inheritedSupervisor
+  const position = resolveQuickBlockPosition(supervisor, colleague)
+
+  const node = createQuickBlockNode({
+    name,
+    photoUrl: cleanString(quickBlockForm.photoUrl),
+    positionTitle: cleanString(quickBlockForm.positionTitle, 'Jabatan'),
+    parentId: effectiveSupervisor?.id || null,
+    supervisorId: supervisor?.id || '',
+    colleagueId: colleague?.id || '',
+    position
+  })
+
+  nodes.value.push(node)
+  ensureCanvasFitsNode(node)
+
+  if (effectiveSupervisor) {
+    createEdge(effectiveSupervisor.id, node.id, 'bottom', 'top', true)
+  }
+
+  selectedNodeId.value = node.id
+  selectedEdgeId.value = ''
+  quickBlockModalOpen.value = false
+  blockListModeOpen.value = true
+
+  await nextTick()
+
+  if (quickBlockForm.autoSave) {
+    await saveDiagram()
+    return
+  }
+
+  showToast('success', 'Block ditambahkan', 'Block organisasi muncul di canvas.')
+}
+
+function createQuickBlockNode(input: {
+  name: string
+  photoUrl: string
+  positionTitle: string
+  parentId: string | null
+  supervisorId: string
+  colleagueId: string
+  position: GridPosition
+}): DiagramNode {
+  const color = randomPalette()
+  const id = uid()
+  const x = structureGrid.startX + (input.position.horizontal - 1) * structureGrid.gapX
+  const y = structureGrid.startY + (input.position.vertical - 1) * structureGrid.gapY
+  const sortOrder = input.position.vertical * 100 + input.position.horizontal
+
+  return {
+    id,
+    persisted: false,
+    parentId: input.parentId,
+    name: input.name,
+    slug: cleanSlug(input.name || id),
+    positionTitle: input.positionTitle,
+    positionCode: cleanSlug(input.positionTitle) || null,
+    organizationUnit: null,
+    photoUrl: input.photoUrl,
+    icon: 'solar:user-rounded-bold-duotone',
+    x,
+    y,
+    width: 250,
+    height: 128,
+    rotation: 0,
+    scaleX: 1,
+    scaleY: 1,
+    fillColor: color.bg,
+    borderColor: color.border,
+    borderWidth: 1,
+    textColor: '#111827',
+    accentColor: color.accent,
+    cornerRadius: 22,
+    padding: 16,
+    nameFontSize: 16,
+    positionFontSize: 13,
+    photoShape: 'circle',
+    photoWidth: 56,
+    photoHeight: 56,
+    draggable: true,
+    locked: false,
+    visible: true,
+    nodeType: 'person',
+    shapeType: 'card',
+    metadata: {
+      inputMode: 'card-list',
+      relationSupervisorId: input.supervisorId || null,
+      relationColleagueId: input.colleagueId || null,
+      gridVertical: input.position.vertical,
+      gridHorizontal: input.position.horizontal
+    },
+    konvaConfig: {},
+    styleConfig: {},
+    sortOrder
+  }
+}
+
+function validateQuickBlockForm() {
+  clearQuickBlockErrors()
+
+  const name = cleanString(quickBlockForm.name)
+  const photoUrl = cleanString(quickBlockForm.photoUrl)
+
+  if (!name) {
+    quickBlockErrors.name = 'Nama wajib diisi.'
+  } else if (name.length < 2) {
+    quickBlockErrors.name = 'Nama minimal 2 karakter.'
+  }
+
+  if (photoUrl && !isValidHttpsUrl(photoUrl)) {
+    quickBlockErrors.photoUrl = 'Masukkan URL lengkap yang diawali https://.'
+  }
+
+  if (quickBlockForm.supervisorId && !selectedRelationNode(quickBlockForm.supervisorId)) {
+    quickBlockErrors.supervisorId = 'Atasan yang dipilih tidak tersedia. Silakan pilih ulang.'
+  }
+
+  if (quickBlockForm.colleagueId && !selectedRelationNode(quickBlockForm.colleagueId)) {
+    quickBlockErrors.colleagueId = 'Kolega yang dipilih tidak tersedia. Silakan pilih ulang.'
+  }
+
+  if (
+    quickBlockForm.supervisorId &&
+    quickBlockForm.supervisorId === quickBlockForm.colleagueId
+  ) {
+    const message = 'Atasan dan kolega harus orang yang berbeda.'
+    quickBlockErrors.supervisorId = message
+    quickBlockErrors.colleagueId = message
+  }
+
+  if (quickBlockSupervisorReadonly.value) {
+    quickBlockForm.supervisorId = ''
+  }
+
+  if (quickBlockColleagueReadonly.value) {
+    quickBlockForm.colleagueId = ''
+  }
+
+  return !Object.values(quickBlockErrors).some(Boolean)
+}
+
+function clearQuickBlockErrors() {
+  for (const field of Object.keys(quickBlockErrors) as QuickBlockErrorField[]) {
+    quickBlockErrors[field] = ''
+  }
+}
+
+function clearQuickBlockFieldError(field: QuickBlockErrorField) {
+  quickBlockErrors[field] = ''
+}
+
+function shouldShowQuickBlockError(field: QuickBlockErrorField) {
+  return quickBlockSubmitted.value && Boolean(quickBlockErrors[field])
+}
+
+function selectedRelationNode(id: string) {
+  return id ? nodes.value.find((node) => node.id === id) || null : null
+}
+
+function relationOptionLabel(node: DiagramNode) {
+  return `${node.name} — ${node.positionTitle}`
+}
+
+function resolveQuickBlockPosition(
+  supervisor: DiagramNode | null,
+  colleague: DiagramNode | null
+): GridPosition {
+  if (!nodes.value.length) return { vertical: 1, horizontal: 1 }
+
+  if (colleague) {
+    return findAvailableGridPosition(
+      nodeGridVertical(colleague),
+      nodeGridHorizontal(colleague) + 1
+    )
+  }
+
+  if (supervisor) {
+    return findAvailableGridPosition(
+      clampPositionIndex(nodeGridVertical(supervisor) + 1),
+      nodeGridHorizontal(supervisor)
+    )
+  }
+
+  return getNextGridPosition()
+}
+
+function findAvailableGridPosition(vertical: number, preferredHorizontal: number): GridPosition {
+  const normalizedVertical = clampPositionIndex(vertical)
+  const normalizedHorizontal = clampPositionIndex(preferredHorizontal)
+  const horizontalCandidates = uniqueNumbers([
+    normalizedHorizontal,
+    ...Array.from({ length: 9 }, (_, index) => normalizedHorizontal + index + 1),
+    ...Array.from({ length: 9 }, (_, index) => normalizedHorizontal - index - 1),
+    ...positionIndexOptions
+  ]).filter((item) => item >= 1 && item <= 10)
+
+  for (const horizontal of horizontalCandidates) {
+    const position = { vertical: normalizedVertical, horizontal }
+    if (!isGridPositionOccupied(position)) return position
+  }
+
+  return getNextGridPosition()
+}
+
+function getNextGridPosition(): GridPosition {
+  const occupied = new Set(
+    nodes.value.map((node) => `${nodeGridVertical(node)}:${nodeGridHorizontal(node)}`)
+  )
+
+  for (const vertical of positionIndexOptions) {
+    for (const horizontal of positionIndexOptions) {
+      if (!occupied.has(`${vertical}:${horizontal}`)) {
+        return { vertical, horizontal }
+      }
+    }
+  }
+
+  return { vertical: 10, horizontal: 10 }
+}
+
+function isGridPositionOccupied(position: GridPosition) {
+  return nodes.value.some((node) => {
+    return nodeGridVertical(node) === position.vertical && nodeGridHorizontal(node) === position.horizontal
+  })
+}
+
+function ensureCanvasFitsNode(node: DiagramNode) {
+  chart.canvasWidth = Math.max(chart.canvasWidth, Math.ceil(node.x + node.width + 180))
+  chart.canvasHeight = Math.max(chart.canvasHeight, Math.ceil(node.y + node.height + 160))
+}
+
+function nodeGridVertical(node: DiagramNode) {
+  const metadataValue = Number(node.metadata?.gridVertical)
+  if (Number.isFinite(metadataValue) && metadataValue > 0) {
+    return clampPositionIndex(metadataValue)
+  }
+
+  return clampPositionIndex(Math.round((node.y - structureGrid.startY) / structureGrid.gapY) + 1)
+}
+
+function nodeGridHorizontal(node: DiagramNode) {
+  const metadataValue = Number(node.metadata?.gridHorizontal)
+  if (Number.isFinite(metadataValue) && metadataValue > 0) {
+    return clampPositionIndex(metadataValue)
+  }
+
+  return clampPositionIndex(Math.round((node.x - structureGrid.startX) / structureGrid.gapX) + 1)
+}
+
+function clampPositionIndex(value: unknown) {
+  return clamp(Math.round(numberValue(value, 1)), 1, 10)
+}
+
+function nodeInitials(value: string) {
+  const words = cleanString(value, 'N')
+    .split(/\s+/)
+    .filter(Boolean)
+
+  return words
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('') || 'N'
+}
+
+function focusNodeFromList(node: DiagramNode) {
+  selectedNodeId.value = node.id
+  selectedEdgeId.value = ''
+  activeTool.value = 'select'
+  stageScale.value = 1
+  stageX.value = Math.round(stageWidth.value / 2 - node.x - node.width / 2)
+  stageY.value = Math.round(stageHeight.value / 2 - node.y - node.height / 2)
 }
 
 function createNodeAt(x: number, y: number) {
@@ -2123,13 +3027,19 @@ function finishLineToHandle(event: any, node: DiagramNode, anchor: AnchorKey) {
   activeTool.value = 'select'
 }
 
-function createEdge(sourceNodeId: string, targetNodeId: string, sourceAnchor: AnchorKey, targetAnchor: AnchorKey) {
+function createEdge(
+  sourceNodeId: string,
+  targetNodeId: string,
+  sourceAnchor: AnchorKey,
+  targetAnchor: AnchorKey,
+  silent = false
+) {
   const exists = edges.value.some((edge) => {
     return edge.sourceNodeId === sourceNodeId && edge.targetNodeId === targetNodeId
   })
 
   if (exists) {
-    showToast('error', 'Line sudah ada', 'Relasi antar block tersebut sudah dibuat.')
+    if (!silent) showToast('error', 'Line sudah ada', 'Relasi antar block tersebut sudah dibuat.')
     return
   }
 
@@ -2153,36 +3063,43 @@ function createEdge(sourceNodeId: string, targetNodeId: string, sourceAnchor: An
     sortOrder: edges.value.length
   })
 
-  showToast('success', 'Line dibuat', 'Garis relasi otomatis tersambung ke block tujuan.')
+  if (!silent) showToast('success', 'Line dibuat', 'Garis relasi otomatis tersambung ke block tujuan.')
 }
 
 function openNodeContextMenu(event: any, node: DiagramNode) {
   event.evt.preventDefault()
+  event.evt.stopPropagation?.()
   event.cancelBubble = true
 
   selectedNodeId.value = node.id
   selectedEdgeId.value = ''
 
-  openActionModal('node', node.id)
+  openContextMenu('node', node.id, event.evt)
 }
 
 function openEdgeContextMenu(event: any, edge: DiagramEdge) {
   event.evt.preventDefault()
+  event.evt.stopPropagation?.()
   event.cancelBubble = true
 
   selectedEdgeId.value = edge.id
   selectedNodeId.value = ''
 
-  openActionModal('edge', edge.id)
+  openContextMenu('edge', edge.id, event.evt)
 }
 
 function openNodeMenuFromCanvas(event: any, node: DiagramNode) {
+  event.evt?.preventDefault?.()
+  event.evt?.stopPropagation?.()
   event.cancelBubble = true
 
   selectedNodeId.value = node.id
   selectedEdgeId.value = ''
 
-  openActionModal('node', node.id)
+  const pointerEvent = event.evt as MouseEvent | undefined
+  const fallback = canvasPointToScreen({ x: node.x + node.width - 24, y: node.y + 22 })
+
+  openContextMenu('node', node.id, pointerEvent || fallback)
 }
 
 function openActionModal(kind: DeleteKind, targetId: string) {
@@ -2190,6 +3107,7 @@ function openActionModal(kind: DeleteKind, targetId: string) {
   closeNodeSettings()
   closeEdgeSettings()
   closeTextEditor()
+  closeContextMenu()
 
   actionModal.kind = kind
   actionModal.targetId = targetId
@@ -2198,6 +3116,51 @@ function openActionModal(kind: DeleteKind, targetId: string) {
 
 function closeActionModal() {
   actionModal.open = false
+}
+
+function addBlockFromContextMenu() {
+  closeContextMenu()
+  openQuickBlockModal()
+}
+
+function editContextMenuTarget() {
+  const { kind, targetId } = contextMenu
+  closeContextMenu()
+
+  if (kind === 'node') {
+    openNodeSettingsById(targetId)
+    return
+  }
+
+  if (kind === 'edge') {
+    openEdgeSettingsById(targetId)
+  }
+}
+
+function copyContextMenuNode() {
+  if (contextMenu.kind !== 'node') return
+
+  selectedNodeId.value = contextMenu.targetId
+  selectedEdgeId.value = ''
+  closeContextMenu()
+  copySelectedNodeToClipboard()
+}
+
+function duplicateContextMenuNode() {
+  if (contextMenu.kind !== 'node') return
+
+  const targetId = contextMenu.targetId
+  closeContextMenu()
+  duplicateNodeById(targetId)
+}
+
+function deleteContextMenuTarget() {
+  if (contextMenu.kind === 'canvas') return
+
+  const kind = contextMenu.kind as DeleteKind
+  const targetId = contextMenu.targetId
+  closeContextMenu()
+  requestDelete(kind, targetId)
 }
 
 function openSelectedSettings() {
@@ -2234,6 +3197,7 @@ function selectEdge(event: any, id: string) {
   selectedEdgeId.value = id
   selectedNodeId.value = ''
   actionModal.open = false
+  contextMenu.open = false
 }
 
 function openEdgeSettingsFromCanvas(event: any, edge: DiagramEdge) {
@@ -2246,15 +3210,13 @@ function openEdgeSettingsFromCanvas(event: any, edge: DiagramEdge) {
 function closeFloatingMenus() {
   exportMenuOpen.value = false
   actionModal.open = false
-}
-
-function closeToolContextMode() {
-  toolMenuContextMode.value = false
+  contextMenu.open = false
 }
 
 function toggleExportMenu() {
   exportMenuOpen.value = !exportMenuOpen.value
   actionModal.open = false
+  contextMenu.open = false
 }
 
 function openNodeSettingsById(id: string) {
@@ -2418,12 +3380,20 @@ function openPhotoPicker(event: any, node: DiagramNode) {
   closeNodeSettings()
   closeEdgeSettings()
 
+  pendingPhotoTarget.value = 'node'
   pendingPhotoNodeId.value = node.id
   photoInput.value?.click()
 }
 
 function triggerNodeFormPhoto() {
+  pendingPhotoTarget.value = 'node'
   pendingPhotoNodeId.value = nodeFormId.value
+  photoInput.value?.click()
+}
+
+function triggerQuickBlockPhoto() {
+  pendingPhotoTarget.value = 'quick'
+  pendingPhotoNodeId.value = ''
   photoInput.value?.click()
 }
 
@@ -2431,7 +3401,8 @@ async function onPickPhoto(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
 
-  if (!file || !pendingPhotoNodeId.value) return
+  if (!file) return
+  if (pendingPhotoTarget.value === 'node' && !pendingPhotoNodeId.value) return
 
   try {
     validateImage(file)
@@ -2450,6 +3421,13 @@ async function onPickPhoto(event: Event) {
     const url = getUploadedUrl(response)
     if (!url) throw new Error('URL hasil upload tidak ditemukan.')
 
+    if (pendingPhotoTarget.value === 'quick') {
+      quickBlockForm.photoUrl = url
+      clearQuickBlockFieldError('photoUrl')
+      showToast('success', 'Foto dipilih', 'Foto berhasil diunggah untuk block baru.')
+      return
+    }
+
     const node = nodes.value.find((item) => item.id === pendingPhotoNodeId.value)
 
     if (node) node.photoUrl = url
@@ -2461,6 +3439,7 @@ async function onPickPhoto(event: Event) {
   } finally {
     input.value = ''
     pendingPhotoNodeId.value = ''
+    pendingPhotoTarget.value = 'node'
     loadNodeImages()
   }
 }
@@ -2670,6 +3649,16 @@ async function saveDiagram() {
           nodeIdMap.set(oldId, newId)
           node.id = newId
           node.persisted = true
+
+          for (const candidate of nodes.value) {
+            if (candidate.parentId === oldId) candidate.parentId = newId
+            if (candidate.metadata?.relationSupervisorId === oldId) {
+              candidate.metadata.relationSupervisorId = newId
+            }
+            if (candidate.metadata?.relationColleagueId === oldId) {
+              candidate.metadata.relationColleagueId = newId
+            }
+          }
         }
       }
     }
@@ -3057,6 +4046,19 @@ function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)))
 }
 
+function uniqueNumbers(values: number[]) {
+  return Array.from(new Set(values.filter(Number.isFinite)))
+}
+
+function isValidHttpsUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && Boolean(url.hostname)
+  } catch {
+    return false
+  }
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
 }
@@ -3164,6 +4166,57 @@ function closeToast() {
   color: rgb(29 78 216);
 }
 
+.block-list-empty,
+.block-list-card {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1.1rem;
+  border-width: 1px;
+  padding: 0.75rem;
+  transition: 160ms ease;
+}
+
+.block-list-empty {
+  justify-content: center;
+  border-color: rgb(191 219 254);
+  background: rgb(239 246 255);
+}
+
+.block-list-card {
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.05);
+}
+
+.context-menu-button {
+  display: flex;
+  min-height: 2.45rem;
+  width: 100%;
+  align-items: center;
+  gap: 0.65rem;
+  border-radius: 0.85rem;
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  color: rgb(64 64 64);
+  transition: 140ms ease;
+}
+
+.context-menu-button:hover {
+  background: rgb(239 246 255);
+  color: rgb(29 78 216);
+}
+
+.context-menu-button-danger {
+  color: rgb(220 38 38);
+}
+
+.context-menu-button-danger:hover {
+  background: rgb(254 242 242);
+  color: rgb(185 28 28);
+}
+
 .input-field {
   display: block;
   width: 100%;
@@ -3184,11 +4237,48 @@ function closeToast() {
   box-shadow: 0 0 0 4px rgb(219 234 254);
 }
 
-.field-label span {
-  display: block;
+.input-field:disabled {
+  cursor: not-allowed;
+  border-color: rgb(229 229 229);
+  background: rgb(245 245 245);
+  color: rgb(163 163 163);
+  opacity: 1;
+}
+
+.input-field-error,
+.input-field-error:focus {
+  border-color: rgb(239 68 68);
+  background: rgb(254 242 242);
+  box-shadow: 0 0 0 4px rgb(254 226 226);
+}
+
+.field-label > .input-field {
+  margin-top: 0.5rem;
+}
+
+.field-label > span {
   font-size: 0.8125rem;
   font-weight: 900;
   color: rgb(64 64 64);
+}
+
+.field-help {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  color: rgb(163 163 163);
+}
+
+.field-error {
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1.25rem;
+  color: rgb(220 38 38);
 }
 
 .range-field {
@@ -3220,6 +4310,11 @@ function closeToast() {
 
 .primary-button:hover {
   background: #1d4ed8;
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .secondary-button {
@@ -3260,6 +4355,10 @@ function closeToast() {
 
 .tool-menu-enter-active,
 .tool-menu-leave-active,
+.block-list-enter-active,
+.block-list-leave-active,
+.context-menu-enter-active,
+.context-menu-leave-active,
 .modal-fade-enter-active,
 .modal-fade-leave-active,
 .toast-enter-active,
@@ -3271,6 +4370,18 @@ function closeToast() {
 .tool-menu-leave-to {
   opacity: 0;
   transform: translateY(-50%) translateX(12px) scale(0.96);
+}
+
+.block-list-enter-from,
+.block-list-leave-to {
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+}
+
+.context-menu-enter-from,
+.context-menu-leave-to {
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
 }
 
 .modal-fade-enter-from,

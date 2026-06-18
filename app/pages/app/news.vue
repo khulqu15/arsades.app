@@ -584,6 +584,18 @@
             Edit
           </button>
 
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-black text-neutral-700 transition hover:bg-sky-50 hover:text-sky-700"
+            @click="openCommentsForNews(activeMenuNews)"
+          >
+            <Icon icon="solar:chat-round-dots-bold-duotone" class="h-5 w-5 text-sky-600" />
+            Komentar
+            <span class="ml-auto rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-black text-neutral-500">
+              {{ commentCountForNews(activeMenuNews.id) }}
+            </span>
+          </button>
+
           <div class="my-1 border-t border-neutral-100"></div>
 
           <button
@@ -978,6 +990,177 @@
         leave-to-class="opacity-0"
       >
         <div
+          v-if="commentsModalOpen && commentModalNews"
+          class="fixed inset-0 z-[135] grid place-items-center bg-neutral-950/60 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          @click.self="closeCommentsModal"
+        >
+          <section class="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-[0_32px_110px_rgba(15,23,42,0.28)]">
+            <div class="flex flex-col gap-4 border-b border-neutral-200 p-5 sm:flex-row sm:items-start sm:justify-between">
+              <div class="min-w-0">
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-sky-600">Komentar Berita</p>
+                <h2 class="mt-1 line-clamp-2 text-2xl font-black tracking-tight text-neutral-950">
+                  {{ commentModalNews.title }}
+                </h2>
+
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                    {{ commentModalStats.total }} komentar
+                  </span>
+                  <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
+                    {{ commentModalStats.pending }} pending
+                  </span>
+                  <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                    {{ commentModalStats.approved }} approved
+                  </span>
+                  <span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-black text-neutral-600">
+                    {{ commentModalStats.hidden }} hidden
+                  </span>
+                  <span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700">
+                    {{ commentModalStats.rejected }} rejected
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  class="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-black text-neutral-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="commentModalLoading"
+                  @click="refreshSelectedNewsComments"
+                >
+                  <Icon
+                    icon="solar:refresh-bold-duotone"
+                    class="h-5 w-5"
+                    :class="commentModalLoading ? 'animate-spin' : ''"
+                  />
+                  Refresh
+                </button>
+
+                <button
+                  type="button"
+                  class="grid h-10 w-10 place-items-center rounded-2xl border border-neutral-200 bg-white text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-950"
+                  aria-label="Tutup komentar berita"
+                  @click="closeCommentsModal"
+                >
+                  <Icon icon="lucide:x" class="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div class="min-h-0 flex-1 overflow-y-auto bg-neutral-50 p-4 sm:p-5">
+              <div v-if="commentModalError" class="mb-4 rounded-3xl border border-red-200 bg-red-50 p-4 text-sm font-bold leading-6 text-red-700">
+                {{ commentModalError }}
+              </div>
+
+              <section v-if="commentModalLoading" class="grid gap-3 lg:grid-cols-2">
+                <div v-for="item in 4" :key="item" class="h-40 animate-pulse rounded-[1.75rem] border border-neutral-200 bg-white p-4">
+                  <div class="h-4 w-48 rounded-full bg-neutral-100"></div>
+                  <div class="mt-4 h-3 w-full rounded-full bg-neutral-100"></div>
+                  <div class="mt-2 h-3 w-4/5 rounded-full bg-neutral-100"></div>
+                </div>
+              </section>
+
+              <section v-else-if="commentModalItems.length === 0" class="rounded-[1.75rem] border border-dashed border-neutral-300 bg-white p-8 text-center shadow-sm">
+                <div class="mx-auto grid h-14 w-14 place-items-center rounded-3xl bg-sky-50 text-sky-600">
+                  <Icon icon="solar:chat-round-dots-bold-duotone" class="h-7 w-7" />
+                </div>
+                <h2 class="mt-4 text-xl font-black text-neutral-950">Belum ada komentar</h2>
+                <p class="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-neutral-500">
+                  Belum ada komentar yang masuk untuk berita ini.
+                </p>
+              </section>
+
+              <section v-else class="grid gap-3 lg:grid-cols-2">
+                <article
+                  v-for="comment in commentModalItems"
+                  :key="comment.id"
+                  class="rounded-[1.75rem] border border-neutral-200 bg-white p-4 shadow-sm"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="truncate text-sm font-black text-neutral-950">
+                          {{ comment.authorName || comment.name || 'Anonim' }}
+                        </h3>
+                        <span class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.1em]" :class="commentStatusClass(comment.status)">
+                          {{ commentStatusLabel(comment.status) }}
+                        </span>
+                      </div>
+                      <p class="mt-1 truncate text-xs font-bold text-neutral-400">
+                        {{ comment.authorEmail || comment.email }} - {{ formatDate(Number(comment.createdAt || Date.now())) }}
+                      </p>
+                    </div>
+
+                    <span class="shrink-0 rounded-2xl bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                      {{ comment.likesCount || comment.likes || 0 }} suka
+                    </span>
+                  </div>
+
+                  <p class="mt-3 whitespace-pre-line text-sm font-semibold leading-7 text-neutral-700">
+                    {{ comment.content || comment.comment }}
+                  </p>
+
+                  <div class="mt-4 flex flex-wrap gap-2 border-t border-neutral-100 pt-4">
+                    <button
+                      type="button"
+                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-emerald-50 px-3 text-xs font-black text-emerald-700 transition hover:bg-emerald-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      :disabled="isMutating"
+                      @click.stop="updateCommentStatus(comment, 'approved')"
+                    >
+                      <Icon icon="solar:check-circle-bold-duotone" class="h-4 w-4" />
+                      Approve
+                    </button>
+
+                    <button
+                      type="button"
+                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-amber-50 px-3 text-xs font-black text-amber-700 transition hover:bg-amber-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      :disabled="isMutating"
+                      @click.stop="updateCommentStatus(comment, 'hidden')"
+                    >
+                      <Icon icon="solar:eye-closed-bold-duotone" class="h-4 w-4" />
+                      Hide
+                    </button>
+
+                    <button
+                      type="button"
+                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-red-50 px-3 text-xs font-black text-red-700 transition hover:bg-red-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      :disabled="isMutating"
+                      @click.stop="updateCommentStatus(comment, 'rejected')"
+                    >
+                      <Icon icon="solar:close-circle-bold-duotone" class="h-4 w-4" />
+                      Reject
+                    </button>
+
+                    <button
+                      type="button"
+                      class="ml-auto inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 text-xs font-black text-neutral-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      :disabled="isMutating"
+                      @click.stop="deleteComment(comment)"
+                    >
+                      <Icon icon="solar:trash-bin-trash-bold-duotone" class="h-4 w-4" />
+                      Hapus
+                    </button>
+                  </div>
+                </article>
+              </section>
+            </div>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div
           v-if="viewModalOpen && selectedNews"
           class="fixed inset-0 z-[130] grid place-items-center bg-neutral-950/60 p-4 backdrop-blur-sm"
           role="dialog"
@@ -1164,10 +1347,15 @@ const pageSize = 12
 const newsModalOpen = ref(false)
 const viewModalOpen = ref(false)
 const deleteModalOpen = ref(false)
+const commentsModalOpen = ref(false)
 
 const formStep = ref(1)
 const editingNews = ref<NormalizedNewsItem | null>(null)
 const selectedNews = ref<NormalizedNewsItem | null>(null)
+const commentModalNews = ref<NormalizedNewsItem | null>(null)
+const commentModalItems = ref<NewsCommentItem[]>([])
+const commentModalLoading = ref(false)
+const commentModalError = ref('')
 const formError = ref('')
 
 const draftLoaded = ref(false)
@@ -1545,6 +1733,18 @@ const selectedNewsContent = computed(() => {
   return htmlFromContent(selectedNews.value.content)
 })
 
+const commentModalStats = computed(() => {
+  const items = commentModalItems.value
+
+  return {
+    total: items.length,
+    pending: items.filter((item) => item.status === 'pending').length,
+    approved: items.filter((item) => item.status === 'approved').length,
+    hidden: items.filter((item) => item.status === 'hidden').length,
+    rejected: items.filter((item) => item.status === 'rejected').length
+  }
+})
+
 useSeoMeta({
   title: () => `${profile.value.title} - ${profile.value.name}`,
   description: () => profile.value.description,
@@ -1640,9 +1840,54 @@ function commentNewsTitle(newsId: string) {
   return normalizedNews.value.find((item) => item.id === newsId)?.title || 'Berita tidak ditemukan'
 }
 
-function openCommentsForNews(item: NormalizedNewsItem) {
-  selectedCommentNewsId.value = item.id
-  activeTab.value = 'comments'
+async function openCommentsForNews(item: NormalizedNewsItem) {
+  commentModalNews.value = item
+  commentModalItems.value = []
+  commentsModalOpen.value = true
+  commentModalError.value = ''
+  closeEllipsisMenu()
+  await loadCommentsForNews(item.id)
+}
+
+function closeCommentsModal() {
+  commentsModalOpen.value = false
+  commentModalNews.value = null
+  commentModalItems.value = []
+  commentModalError.value = ''
+}
+
+async function refreshSelectedNewsComments() {
+  if (!commentModalNews.value) return
+  await loadCommentsForNews(commentModalNews.value.id)
+}
+
+async function reloadOpenCommentsModal() {
+  if (!commentsModalOpen.value || !commentModalNews.value) return
+  await loadCommentsForNews(commentModalNews.value.id)
+}
+
+async function loadCommentsForNews(newsId: string) {
+  commentModalLoading.value = true
+  commentModalError.value = ''
+  commentModalItems.value = []
+
+  try {
+    const response = await $fetch<NewsCommentListResponse>(commentsApiUrl.value, {
+      query: {
+        newsId,
+        status: 'all',
+        limit: 200,
+        sort: 'newest'
+      }
+    })
+
+    commentModalItems.value = response.data || []
+  } catch (error) {
+    commentModalItems.value = []
+    commentModalError.value = getErrorMessage(error, 'Komentar berita belum bisa dimuat.')
+  } finally {
+    commentModalLoading.value = false
+  }
 }
 
 async function updateCommentStatus(comment: NewsCommentItem, status: NewsCommentStatus) {
@@ -1658,6 +1903,7 @@ async function updateCommentStatus(comment: NewsCommentItem, status: NewsComment
 
     showToast('success', 'Komentar Diupdate', `Status komentar menjadi ${commentStatusLabel(status)}.`)
     await reloadComments()
+    await reloadOpenCommentsModal()
   } catch (error) {
     showToast('error', 'Gagal Update Komentar', getErrorMessage(error, 'Komentar belum bisa diupdate.'))
   } finally {
@@ -1675,6 +1921,7 @@ async function deleteComment(comment: NewsCommentItem) {
 
     showToast('success', 'Komentar Dihapus', 'Komentar berhasil dihapus.')
     await reloadComments()
+    await reloadOpenCommentsModal()
   } catch (error) {
     showToast('error', 'Gagal Menghapus Komentar', getErrorMessage(error, 'Komentar belum bisa dihapus.'))
   } finally {
@@ -2123,7 +2370,7 @@ function openEllipsisMenu(item: NormalizedNewsItem, event: MouseEvent) {
   const rect = target.getBoundingClientRect()
 
   const menuWidth = 224
-  const menuHeight = 220
+  const menuHeight = 272
   const gap = 8
   const padding = 12
 
@@ -2528,6 +2775,7 @@ function handleEscape(event: KeyboardEvent) {
   if (event.key !== 'Escape') return
 
   closeEllipsisMenu()
+  closeCommentsModal()
   closeView()
   closeDelete()
   closeNewsModal()
